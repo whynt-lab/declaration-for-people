@@ -1,0 +1,3792 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Декларация 250 — структура</title>
+<style>
+  :root{
+    --bg:#F5F6F4;
+    --surface:#FFFFFF;
+    --ink:#1B2420;
+    --muted:#5C6B63;
+    --accent:#2F6F5E;
+    --accent-soft:#E4EFE9;
+    --warn:#C4453B;
+    --warn-soft:#FBEAE8;
+    --ok:#2F7D45;
+    --ok-soft:#E6F2E8;
+    --review-soft:#FBF3DD;
+    --border:#DDE3DF;
+    --radius:10px;
+    --sidebar-w:260px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;}
+  a{color:inherit;text-decoration:none;}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:10;
+    background:var(--surface);border-bottom:1px solid var(--border);
+    padding:12px 20px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .topbar .icon-btn{
+    width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .topbar .icon-btn:hover{color:var(--ink);background:var(--bg);}
+  .page-eyebrow{
+    font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;
+    letter-spacing:.05em;margin-bottom:6px;
+  }
+  .help-wrap{position:relative;display:inline-block;vertical-align:middle;margin-left:4px;}
+  .help-btn{
+    width:20px;height:20px;border-radius:50%;border:1px solid var(--border);background:var(--bg);
+    color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;line-height:1;
+    display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;
+  }
+  .help-btn:hover{color:var(--accent);border-color:var(--accent);}
+  .info-popover{
+    position:absolute;top:calc(100% + 8px);left:0;z-index:30;width:280px;
+    background:var(--ink);color:#fff;font-size:12.5px;font-weight:400;line-height:1.5;
+    border-radius:8px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.18);
+    text-transform:none;letter-spacing:normal;
+  }
+  .info-popover::before{
+    content:"";position:absolute;bottom:100%;left:14px;border:6px solid transparent;border-bottom-color:var(--ink);
+  }
+  .btn{
+    font-size:13px;font-weight:600;padding:8px 14px;border-radius:7px;cursor:pointer;
+    border:1px solid var(--border);background:var(--surface);color:var(--ink);
+  }
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .topbar .btn.primary{
+    font-size:13.5px;padding:10px 20px;
+    box-shadow:0 2px 8px rgba(47,111,94,.28);
+  }
+  .btn:hover{filter:brightness(0.97);}
+
+  /* ---------- home grid ---------- */
+  .home-wrap{max-width:920px;margin:0 auto;padding:40px 20px 80px;}
+  .home-wrap h1{font-size:24px;margin:0 0 6px;}
+  .home-wrap>p{color:var(--muted);font-size:14px;margin:0 0 28px;max-width:560px;}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;}
+  @media(max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;cursor:pointer;transition:border-color .15s;
+    display:flex;flex-direction:column;height:100%;
+  }
+  .card:hover{border-color:var(--accent);}
+  .card .icon{font-size:22px;margin-bottom:10px;}
+  .card h3{font-size:15px;margin:0 0 6px;}
+  .card p{font-size:12.5px;color:var(--muted);margin:0 0 12px;}
+  .status{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;display:inline-block;margin-top:auto;align-self:flex-start;}
+  .status.notstarted{background:#EEF0EE;color:var(--muted);}
+  .status.hasgaps{background:var(--warn-soft);color:var(--warn);}
+  .status.ready{background:var(--ok-soft);color:var(--ok);}
+  .status.noassets{background:#EEF0EE;color:var(--muted);}
+  .status.inprogress{background:#E6EEFB;color:#2A5DB0;}
+
+  .finish-cta{
+    margin-top:24px;background:var(--ink);color:#fff;border-radius:var(--radius);
+    padding:18px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+  }
+  .finish-cta .btn{background:#fff;color:var(--ink);border:none;}
+  .finish-cta .label{font-size:13px;color:#B9C4BE;}
+
+  /* ---------- app layout with sidebar ---------- */
+  .app-layout{display:flex;min-height:calc(100vh - 49px);}
+  .sidebar{
+    width:var(--sidebar-w);flex-shrink:0;background:var(--surface);
+    border-right:1px solid var(--border);padding:16px 10px;
+  }
+  .sidebar .back{
+    font-size:13px;color:var(--muted);padding:8px 10px;display:block;margin-bottom:10px;
+    cursor:pointer;border-radius:7px;
+  }
+  .sidebar .back:hover{color:var(--ink);background:var(--bg);}
+  .nav-item{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 10px;border-radius:7px;font-size:13.5px;margin-bottom:2px;cursor:pointer;
+  }
+  .nav-item:hover{background:var(--bg);}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+  .nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .nav-dot.notstarted{background:#C9CFCB;}
+  .nav-dot.hasgaps{background:var(--warn);}
+  .nav-dot.ready{background:#C9CFCB;}
+  .nav-dot.noassets{background:#C9CFCB;}
+  .nav-dot.inprogress{background:#C9CFCB;}
+  .nav-item .label{display:flex;align-items:center;gap:8px;}
+  .sidebar-divider{height:1px;background:var(--border);margin:12px 6px;}
+
+  .content{flex:1;padding:28px 32px;max-width:1040px;}
+  .narrow-col{max-width:640px;}
+  .content h2{font-size:20px;margin:0 0 4px;}
+  .content .subtitle{font-size:13px;color:var(--muted);margin:0 0 24px;}
+
+  /* ---------- question cards (state machine) ---------- */
+  .q-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    margin-bottom:8px;overflow:hidden;
+  }
+  .q-card-head{
+    padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;
+  }
+  .q-card-head:hover{background:#FBFCFB;}
+  .q-card-title{font-size:14px;font-weight:500;}
+  .q-card-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
+  .badge-icon{font-size:11px;line-height:1;}
+  .q-card-badge.notopened{background:#EEF0EE;color:var(--muted);}
+  .q-card-badge.pending{background:var(--warn-soft);color:#A97A00;}
+  .q-card-badge.waiting{background:#E6EEFB;color:#2A5DB0;}
+  .q-card-badge.done{background:var(--ok-soft);color:var(--ok);}
+  .collapse-btn{
+    background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);
+    font-size:11.5px;cursor:pointer;padding:4px 10px;white-space:nowrap;flex-shrink:0;
+  }
+  .collapse-btn:hover{color:var(--ink);background:var(--bg);}
+
+  .q-card-body{
+    border-top:1px dashed var(--border);padding:16px;background:#FBFCFB;
+  }
+  .q-card-body .q-text{font-size:14px;font-weight:500;margin-bottom:6px;}
+  .q-card-body .q-hint{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .question-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px;}
+  .question-text-col{flex:1;min-width:0;}
+  @media(max-width:640px){
+    .question-row{flex-direction:column;}
+  }
+  .switch{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12.5px;flex-shrink:0;width:fit-content;}
+  .switch button{border:none;background:var(--surface);padding:7px 18px;cursor:pointer;color:var(--muted);}
+  .switch button:hover{background:var(--bg);}
+  .switch button.active{background:var(--accent);color:#fff;}
+  .switch button.active.no{background:var(--muted);}
+  .bot-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;}
+  .bot-chat{
+    max-height:280px;overflow-y:auto;padding:0 4px 10px 0;margin-bottom:20px;
+    border-bottom:1px solid var(--border);
+  }
+  .bot-chat .bot-row:last-child{margin-bottom:4px;}
+
+  /* ---------- кнопка-переключатель переписки с ботом (когда уже есть таблица) ---------- */
+  .chat-toggle-btn{
+    display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);
+    border-radius:7px;color:var(--muted);font-size:12px;cursor:pointer;padding:6px 12px;margin-bottom:14px;
+  }
+  .chat-toggle-btn:hover{color:var(--ink);background:var(--bg);}
+  .bot-avatar{
+    width:30px;height:30px;border-radius:50%;background:#E3ECF7;
+    display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+    animation:botPop .3s ease;
+  }
+  @keyframes botPop{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .bot-bubble{
+    flex:1;padding:10px 14px;border-radius:4px 14px 14px 14px;font-size:13px;line-height:1.5;
+    animation:bubbleIn .2s ease;
+  }
+  @keyframes bubbleIn{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+  .bot-bubble.include{background:#E3ECF7;color:#26456E;}
+  .bot-bubble.exclude{background:#E3ECF7;color:#26456E;}
+
+  /* кнопки ответа на вопрос бота — в его цветах, а не как обычные кнопки формы */
+  .bot-action-btn{
+    font-family:inherit;font-size:13px;font-weight:600;padding:8px 14px;
+    border-radius:16px;cursor:pointer;border:1px solid #C7D6EC;
+    background:#fff;color:#26456E;
+  }
+  .bot-action-btn:hover{background:#EEF3FB;}
+  .bot-action-btn.bot-action-primary{background:#26456E;color:#fff;border-color:#26456E;}
+  .bot-action-btn.bot-action-primary:hover{background:#1D3557;}
+  .bot-bubble.tip{
+    background:var(--review-soft, #FBF3DD);color:#7A5C00;
+    border:1px solid #EBD9A8;
+  }
+  .tip-title{font-weight:700;font-size:12px;margin-bottom:5px;}
+  .tip-link{
+    display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600;
+    color:#7A5C00;text-decoration:underline;
+  }
+  .tip-link:hover{opacity:.75;}
+  .bot-bubble p{margin:0 0 8px;}
+  .bot-bubble p:last-child{margin-bottom:0;}
+  .bot-bubble strong{color:inherit;}
+  .bot-bubble.thinking{
+    display:flex;align-items:center;gap:5px;background:#E3ECF7;padding:12px 16px;
+  }
+  .bot-bubble.thinking span{
+    width:6px;height:6px;border-radius:50%;background:#7B93B5;
+    animation:botDot 1.1s infinite ease-in-out;
+  }
+  .bot-bubble.thinking span:nth-child(2){animation-delay:.15s;}
+  .bot-bubble.thinking span:nth-child(3){animation-delay:.3s;}
+  @keyframes botDot{0%,80%,100%{transform:translateY(0);opacity:.35;}40%{transform:translateY(-4px);opacity:1;}}
+  .decision-actions{display:flex;gap:8px;margin-bottom:10px;}
+  .inline-decision{margin-left:40px;margin-top:-4px;}
+  .inline-decision .decision-actions{margin-bottom:2px;}
+  .undo{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;}
+
+  /* ---------- form tables (manual data entry) ---------- */
+  .form-table-wrap{overflow-x:auto;overflow-y:visible;margin-bottom:4px;padding-bottom:2px;}
+  .form-table{border-collapse:collapse;width:max-content;min-width:100%;table-layout:fixed;}
+  .form-table th{
+    text-align:left;font-size:10.5px;color:var(--muted);font-weight:600;
+    text-transform:uppercase;letter-spacing:.03em;padding:0 6px 6px;white-space:nowrap;
+  }
+  /* по верхнему краю — иначе текст ошибки под одним полем сдвигает соседние */
+  .form-table td{padding:3px 6px 3px 0;vertical-align:top;}
+  .rownum-col{width:22px;font-size:12px;color:var(--muted);font-family:inherit;text-align:center;padding-top:10px;}
+  .row-actions-col{width:22px;}
+  .row-actions-col button{
+    background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:6px 4px;
+  }
+  .row-actions-col button:hover{color:var(--warn);}
+  .form-cell{
+    width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;
+    font-size:12.5px;font-family:inherit;background:var(--surface);
+  }
+  .form-cell:focus{outline:none;border-color:var(--accent);}
+  .form-cell[readonly]{background:#F2F3F1;color:var(--muted);}
+  select.form-cell{cursor:pointer;max-width:100%;padding:6px 6px;}
+  .cell-with-error{display:flex;flex-direction:column;gap:3px;}
+  .form-cell.cell-invalid{border-color:var(--warn);background:var(--warn-soft);}
+  .cell-error{font-size:10.5px;color:var(--warn);line-height:1.3;min-height:0;}
+  .cell-with-error{min-width:0;}
+  /* ---------- панель формы (заметно выделена, появляется после решения «внести») ---------- */
+  .form-panel{
+    border:1.5px solid var(--accent);border-radius:12px;background:var(--surface);
+    padding:18px 18px 160px;box-shadow:0 3px 14px rgba(47,111,94,.10);
+    animation:formPanelIn .25s ease;
+  }
+  @keyframes formPanelIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .form-panel-head{margin-bottom:14px;}
+  .form-panel-title{font-size:14.5px;font-weight:700;color:var(--accent);margin-bottom:3px;}
+  .form-panel-sub{font-size:12.5px;color:var(--muted);}
+
+  .add-row-btn{margin-top:8px;font-size:12px;padding:6px 12px;}
+
+  /* ---------- «Счета в иностранных банках»: сводка + пошаговая форма ---------- */
+  .acc-country-card{
+    border:1px solid var(--border);border-radius:12px;background:var(--surface);
+    margin-bottom:16px;overflow:visible;
+  }
+  .acc-country-top{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:14px;
+    padding:16px 18px;border-bottom:1px solid var(--border);
+  }
+  .acc-country-field{flex:0 0 260px;}
+  .acc-field-label{font-size:11.5px;color:var(--muted);margin-bottom:5px;}
+  .acc-delete-link{
+    background:none;border:none;color:var(--warn);cursor:pointer;
+    font-size:12.5px;font-weight:600;padding:6px 4px;white-space:nowrap;
+  }
+  .acc-delete-link:hover{text-decoration:underline;}
+
+  .acc-banks-block{padding:16px 18px;}
+  .acc-banks-header{display:flex;align-items:center;gap:14px;}
+  .acc-banks-actions{display:flex;gap:8px;flex-shrink:0;}
+  .upload-stmt-btn{background:#E3ECF7;border-color:#C7D6EC;color:#26456E;}
+  .upload-stmt-btn:hover{background:#D5E2F4;}
+  .acc-banks-text{flex:1;min-width:0;}
+  .acc-banks-title{font-size:13.5px;font-weight:700;margin-bottom:2px;}
+  .acc-banks-sub{font-size:12px;color:var(--muted);}
+  .acc-add-bank-btn{flex-shrink:0;font-size:12.5px;padding:8px 14px;}
+
+  .acc-summary-bank{
+    margin:14px 0 0;border:1px solid var(--border);
+    border-radius:9px;background:var(--surface);overflow:visible;
+  }
+  .acc-summary-bank-head{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:12px 14px;background:#F3F6F4;border-bottom:1px solid var(--border);
+    border-radius:9px 9px 0 0;
+  }
+  .acc-bank-field-name{flex:1;min-width:130px;}
+  .acc-bank-field-inn{flex:0 0 170px;}
+  .acc-bank-name-input{font-weight:600;}
+  .acc-remove-bank{margin-top:22px;}
+  .acc-entries-wrap{padding:12px 14px;}
+  .acc-entries-label{
+    font-size:11px;font-weight:700;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;
+  }
+  .acc-summary-entry{
+    display:flex;align-items:baseline;gap:8px;padding:3px 0;font-size:13px;
+  }
+  .acc-entry-amount{font-weight:600;}
+  .acc-entry-currency{color:var(--muted);font-size:12px;flex:1;}
+  .acc-remove-btn{
+    background:none;border:none;color:#C9CFCB;cursor:pointer;
+    font-size:15px;padding:0 4px;flex-shrink:0;line-height:1;
+  }
+  .acc-remove-btn:hover{color:var(--warn);}
+  .acc-add-link{
+    background:none;border:none;color:var(--accent);cursor:pointer;
+    font-size:12.5px;padding:4px 0;margin-top:4px;
+  }
+  .acc-add-link:hover{text-decoration:underline;}
+
+  /* активная форма — ровно одна на экране */
+  .acc-draft{
+    background:var(--surface);border:1px solid var(--accent);border-radius:9px;
+    padding:14px;margin:12px 0 0;max-width:440px;
+    animation:formPanelIn .2s ease;
+  }
+  .acc-draft-title{font-size:13px;font-weight:600;margin-bottom:10px;}
+  .acc-draft-flat{
+    border:none;background:none;padding:14px 0 0;margin:0;max-width:none;box-shadow:none;
+  }
+  .acc-draft-fields{display:flex;gap:8px;flex-wrap:wrap;}
+  .acc-draft-fields>*{flex:1;min-width:150px;}
+  .acc-draft-actions{display:flex;gap:8px;margin-top:12px;}
+
+  /* убираем стрелочки у числовых полей везде на сайте */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance:none;margin:0;
+  }
+  input[type=number]{ -moz-appearance:textfield; }
+
+  /* ---------- поисковый селектор (валюта / страна) ---------- */
+  .combo-wrap{position:relative;}
+  .combo-input{cursor:text;}
+  .combo-list{
+    display:none;position:fixed;z-index:200;
+    min-width:240px;max-height:320px;overflow-y:auto;overscroll-behavior:contain;
+    background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,.10);padding:4px;
+  }
+  .combo-item{
+    padding:7px 9px;border-radius:6px;font-size:12.5px;cursor:pointer;white-space:nowrap;
+  }
+  .combo-item:hover{background:var(--accent-soft);color:var(--accent);}
+  .combo-item{display:flex;align-items:center;gap:8px;}
+  .combo-item-name{flex:1;}
+  .bank-picker{position:relative;max-width:420px;}
+  .bank-item{display:flex;align-items:baseline;gap:10px;}
+  .bank-item-name{flex:1;}
+  .bank-item-inn{font-family:monospace;font-size:11px;color:var(--muted);white-space:nowrap;}
+  .combo-item-code{font-family:monospace;font-size:11px;color:var(--muted);}
+  .flag-fallback{
+    display:inline-block;min-width:20px;text-align:center;font-family:monospace;
+    font-size:10px;font-weight:700;color:var(--muted);background:var(--bg);
+    border-radius:2px;padding:1px 3px;flex-shrink:0;
+  }
+  .flag-img{
+    display:inline-block;vertical-align:middle;border-radius:2px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.08);flex-shrink:0;
+  }
+  .combo-flag-slot{
+    position:absolute;left:9px;top:50%;transform:translateY(-50%);
+    pointer-events:none;line-height:0;z-index:1;
+  }
+  .combo-input.has-flag{padding-left:36px;}
+  .combo-empty{padding:8px 9px;font-size:12px;color:var(--muted);}
+
+  /* ---------- excluded (struck-through) row ---------- */
+  .q-card.excluded{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 16px;background:transparent;border-style:dashed;opacity:.7;
+  }
+  .q-card-title.strike{text-decoration:line-through;color:var(--muted);font-size:13.5px;font-weight:400;}
+  .excluded-note{font-size:11.5px;color:var(--muted);white-space:nowrap;}
+  .excluded-note .undo{color:var(--accent);}
+
+  /* ---------- finish screen ---------- */
+  .summary-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;font-size:13.5px;
+  }
+  .summary-row .fix{font-size:12.5px;color:var(--accent);cursor:pointer;}
+  .profile-form{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;margin-top:20px;
+  }
+  .profile-form h3{font-size:15px;margin:0 0 14px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:11.5px;color:var(--muted);}
+  .field .cell-error{margin-top:2px;}
+  .field input, .field select{
+    border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;
+    font-family:inherit;background:var(--surface);
+  }
+  .field select{cursor:pointer;}
+  .field input:disabled{background:#F2F3F1;color:var(--muted);}
+  .final-cta{margin-top:20px;}
+  .warning-list{font-size:12.5px;color:var(--warn);margin-top:8px;}
+
+  .hidden{display:none !important;}
+
+  /* ---------- посадочная страница ---------- */
+  .landing-wrap{
+    min-height:100vh;padding:24px 20px 60px;
+    background:radial-gradient(ellipse 900px 500px at 50% -10%, var(--accent-soft), transparent);
+  }
+  .landing-topbar{
+    max-width:1040px;margin:0 auto 60px;display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:12px;
+  }
+  .landing-logo{display:flex;align-items:center;gap:10px;}
+  .landing-logo-text{display:flex;flex-direction:column;text-align:left;line-height:1.25;}
+  .landing-logo-title{font-weight:600;font-size:16px;}
+  .landing-logo-sub{font-size:11.5px;color:var(--muted);}
+  .landing-trust-badge{
+    display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);
+    background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:8px 14px;
+  }
+  .landing-hero{max-width:560px;margin:0 auto;text-align:center;}
+  .landing-hero h1{font-size:38px;line-height:1.2;margin:0 0 16px;font-weight:800;letter-spacing:-.01em;}
+  .landing-accent{color:var(--accent);}
+  .landing-sub{font-size:15px;color:var(--muted);line-height:1.6;margin:0 auto 26px;max-width:460px;}
+  .landing-btn{
+    padding:14px 34px;font-size:15px;font-weight:700;border-radius:12px;
+    box-shadow:0 10px 24px rgba(47,111,94,.25);
+  }
+  .landing-privacy-line{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    font-size:12px;color:var(--muted);margin-top:16px;
+  }
+
+  /* ---------- превью продукта под хиро-блоком: слайдер из трёх примеров ---------- */
+  .landing-preview{
+    max-width:760px;margin:56px auto 0;background:var(--surface);border:1px solid var(--border);
+    border-radius:18px;box-shadow:0 20px 50px rgba(27,36,32,.08);overflow:hidden;
+    padding:22px 0 26px;text-align:left;
+  }
+  .preview-caption{
+    text-align:center;font-size:13px;font-weight:600;color:var(--muted);
+    padding:0 24px 18px;min-height:20px;
+  }
+  .preview-slider{display:flex;align-items:center;gap:8px;padding:0 10px;}
+  .preview-arrow{
+    flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+    background:var(--surface);color:var(--muted);font-size:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;line-height:1;
+  }
+  .preview-arrow:hover{color:var(--ink);background:var(--bg);}
+  .preview-viewport{flex:1;overflow:hidden;}
+  .preview-track{display:flex;transition:transform .3s ease;}
+  .preview-slide{flex:0 0 100%;min-width:0;}
+  .preview-dots{display:flex;justify-content:center;gap:7px;margin-top:18px;}
+  .preview-dot{
+    width:7px;height:7px;border-radius:50%;background:var(--border);border:none;
+    cursor:pointer;padding:0;
+  }
+  .preview-dot-active{background:var(--accent);width:18px;border-radius:4px;}
+
+  .preview-card{padding:8px 28px 4px;}
+  .preview-card-eyebrow{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
+  .preview-card-q{font-size:16px;font-weight:600;margin-bottom:6px;line-height:1.4;}
+  .preview-card-hint{font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+  .preview-switch{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px;}
+  .preview-switch-btn{padding:7px 20px;font-size:12.5px;color:var(--muted);}
+  .preview-switch-active{background:var(--accent);color:#fff;font-weight:600;}
+  .preview-bot-row{display:flex;gap:10px;align-items:flex-start;}
+  .preview-bot-avatar{
+    width:28px;height:28px;border-radius:50%;background:#E3ECF7;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:13px;
+  }
+  .preview-bot-bubble{
+    background:#E3ECF7;color:#26456E;font-size:12.5px;line-height:1.5;
+    padding:10px 14px;border-radius:10px;
+  }
+
+  /* слайд 2: загрузка справки из банка */
+  .preview-bank-block{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;}
+  .preview-bank-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .preview-bank-name{font-size:13.5px;font-weight:700;}
+  .preview-bank-inn{font-size:11px;color:var(--muted);}
+  .preview-bank-line{display:flex;align-items:baseline;gap:8px;font-size:13px;padding:3px 0;}
+  .preview-bank-line b{font-weight:700;}
+  .preview-bank-line span:last-child{color:var(--muted);font-size:11.5px;}
+  .preview-upload-row{display:flex;gap:8px;margin-bottom:14px;}
+  .preview-upload-btn, .preview-add-btn{
+    font-size:12px;padding:7px 12px;border-radius:7px;border:1px solid var(--border);
+  }
+  .preview-upload-btn{background:#E3ECF7;border-color:#C7D6EC;color:#26456E;}
+  .preview-add-btn{color:var(--muted);}
+  .preview-toast{
+    background:var(--ok-soft);color:var(--ok);font-size:12px;font-weight:600;
+    padding:10px 14px;border-radius:8px;
+  }
+
+  /* слайд 3: сохранение файла для налоговой */
+  .preview-card-center{text-align:center;padding-top:10px;padding-bottom:14px;}
+  .preview-file-icon{font-size:34px;margin-bottom:8px;}
+  .preview-file-name{
+    font-family:monospace;font-size:12.5px;color:var(--muted);background:var(--bg);
+    display:inline-block;padding:5px 10px;border-radius:6px;margin-bottom:16px;
+  }
+  .preview-file-steps{font-size:12.5px;color:var(--muted);line-height:1.9;margin-bottom:18px;}
+  .preview-download-btn{
+    display:inline-block;background:var(--accent);color:#fff;font-size:13px;font-weight:600;
+    padding:10px 20px;border-radius:9px;
+  }
+
+  @media(max-width:760px){
+    .landing-hero h1{font-size:28px;}
+    .preview-slider{padding:0 4px;}
+    .preview-card{padding:8px 16px 4px;}
+  }
+
+  /* ---------- экраны start / disclaimer / yearpick ---------- */
+  .center-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .center-card{max-width:460px;width:100%;background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;padding:28px;}
+  .back-link{font-size:12.5px;color:var(--muted);display:inline-block;margin-bottom:14px;}
+  .back-link:hover{color:var(--ink);}
+  .center-card h2{font-size:19px;margin:0 0 8px;}
+  .step-group{display:flex;flex-direction:column;gap:12px;width:100%;max-width:460px;}
+  .step-eyebrow{
+    font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;
+    letter-spacing:.05em;padding-left:2px;
+  }
+  .center-sub{font-size:13.5px;color:var(--muted);line-height:1.55;margin:0 0 18px;}
+  .center-options{display:flex;flex-direction:column;gap:10px;}
+  .option-card{
+    text-align:left;border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+    background:var(--surface);cursor:pointer;font-family:inherit;
+  }
+  .option-card:hover{border-color:var(--accent);background:var(--accent-soft);}
+  .option-title{font-size:14px;font-weight:700;margin-bottom:3px;}
+  .option-sub{font-size:12.5px;color:var(--muted);}
+  .disclaimer-emoji{font-size:28px;margin-bottom:10px;}
+  .disclaimer-list{margin:0 0 16px;padding-left:20px;font-size:13.5px;line-height:1.6;color:var(--ink);}
+  .disclaimer-list li{margin-bottom:8px;}
+  .disclaimer-list li:last-child{margin-bottom:0;}
+  .center-cta{width:100%;padding:11px;font-size:14px;margin-top:6px;}
+  .yearpick-select{margin:14px 0 10px;width:100%;}
+
+  /* ---------- окно подтверждения ---------- */
+  .confirm-overlay{
+    position:fixed;inset:0;z-index:500;background:rgba(27,36,32,.45);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    animation:overlayIn .12s ease;
+  }
+  @keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
+  .confirm-box{
+    background:var(--surface);border-radius:12px;padding:22px;max-width:400px;width:100%;
+    box-shadow:0 12px 40px rgba(0,0,0,.22);animation:formPanelIn .16s ease;
+  }
+  .confirm-title{font-size:15px;font-weight:700;margin-bottom:6px;}
+  .confirm-text{font-size:13px;color:var(--muted);line-height:1.5;}
+  .confirm-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+  .btn.confirm-danger{background:var(--warn);color:#fff;border-color:var(--warn);}
+
+  /* ---------- всплывающее уведомление (распознавание справки) ---------- */
+  .toast{
+    display:none;position:fixed;right:20px;bottom:20px;z-index:600;max-width:340px;
+    padding:12px 16px;border-radius:10px;font-size:13px;line-height:1.45;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);animation:formPanelIn .15s ease;
+  }
+  .toast-info{background:#26456E;color:#fff;}
+  .toast-ok{background:var(--ok);color:#fff;}
+  .toast-warn{background:var(--warn);color:#fff;}
+
+  /* ---------- date pill / year selector ---------- */
+  .date-pill{
+    font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);
+    padding:4px 10px;border-radius:20px;white-space:nowrap;
+  }
+  .year-dropdown{
+    font-size:13px;font-weight:600;padding:8px 32px 8px 12px;border-radius:7px;
+    border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);
+    cursor:pointer;appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0L5 6L10 0Z' fill='%232F6F5E'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;
+  }
+  .year-dropdown option:disabled{color:#B7BDB9;}
+  /* год прямо в заголовке «Ваша декларация» — кликабельный, открывает нативный выбор года */
+  .year-inline-select{
+    font:inherit;font-weight:inherit;color:var(--accent);border:none;background:none;
+    cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='7'><path d='M0 0L5.5 7L11 0Z' fill='%232F6F5E'/></svg>");
+    background-repeat:no-repeat;background-position:right center;
+  }
+  .sidebar-date{font-size:11.5px;color:var(--muted);padding:0 10px 12px;}
+</style>
+</head>
+<body>
+
+<!-- ============ LANDING ============ -->
+<div id="view-landing" class="landing-wrap">
+  <div class="landing-topbar">
+    <div class="landing-logo">
+      <span class="landing-logo-text">
+        <span class="landing-logo-title">Форма №250</span>
+        <span class="landing-logo-sub">электронная декларация</span>
+      </span>
+    </div>
+    <div class="landing-trust-badge">🛡 Формат, который принимает налоговая</div>
+  </div>
+
+  <div class="landing-hero">
+    <h1>Декларация,<br>сделанная <span class="landing-accent">для людей</span></h1>
+    <p class="landing-sub">
+      Не нужно сами разбираться в налоговых формах. Отвечайте на простые вопросы,
+      а помощник подскажет, что вам заполнять.
+    </p>
+    <button class="btn primary landing-btn" onclick="navigate('start')">Начать →</button>
+    <div class="landing-privacy-line">🔒 Ваши данные остаются в браузере — мы их не храним</div>
+  </div>
+
+  <div class="landing-preview">
+    <div class="preview-caption" id="preview-caption"></div>
+    <div class="preview-slider">
+      <button class="preview-arrow preview-arrow-left" onclick="previewSlide(-1)" aria-label="Предыдущий пример">‹</button>
+      <div class="preview-viewport">
+        <div class="preview-track" id="preview-track">
+
+          <div class="preview-slide">
+            <div class="preview-card">
+              <div class="preview-card-eyebrow">Деньги и инвестиции</div>
+              <div class="preview-card-q">Были ли у вас деньги на счетах в иностранных банках на 31.12.2025?</div>
+              <div class="preview-card-hint">Считаются карточные счета, текущие и накопительные счета, депозиты (вклады).</div>
+              <div class="preview-switch">
+                <span class="preview-switch-btn preview-switch-active">Да</span>
+                <span class="preview-switch-btn">Нет</span>
+              </div>
+              <div class="preview-bot-row">
+                <div class="preview-bot-avatar">🤖</div>
+                <div class="preview-bot-bubble">По правилам декларировать обязательно, если в сумме на них было больше 3 932 000 тенге — именно на дату 31.12.2025.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-slide">
+            <div class="preview-card">
+              <div class="preview-card-eyebrow">Счета в иностранных банках</div>
+              <div class="preview-bank-block">
+                <div class="preview-bank-head">
+                  <span class="preview-bank-name">АО «ТБанк»</span>
+                  <span class="preview-bank-inn">ИНН 7710140679</span>
+                </div>
+                <div class="preview-bank-line"><span>Сумма</span><b>393&nbsp;832,45</b><span>RUB</span></div>
+                <div class="preview-bank-line"><span>Сумма</span><b>772,40</b><span>EUR</span></div>
+              </div>
+              <div class="preview-upload-row">
+                <span class="preview-upload-btn">📄 Загрузить справку</span>
+                <span class="preview-add-btn">+ Добавить банк</span>
+              </div>
+              <div class="preview-toast">✅ Готово: АО «ТБанк» — добавлено строк: 2. Сверьте со справкой.</div>
+            </div>
+          </div>
+
+          <div class="preview-slide">
+            <div class="preview-card preview-card-center">
+              <div class="preview-file-icon">📄</div>
+              <div class="preview-file-name">declaration-250-2026.json</div>
+              <div class="preview-file-steps">
+                <div>1. Сформируйте файл в помощнике</div>
+                <div>2. Зайдите на сайт налоговой</div>
+                <div>3. Загрузите файл — готово</div>
+              </div>
+              <span class="preview-download-btn">⬇ Сформировать декларацию</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <button class="preview-arrow preview-arrow-right" onclick="previewSlide(1)" aria-label="Следующий пример">›</button>
+    </div>
+    <div class="preview-dots" id="preview-dots"></div>
+  </div>
+</div>
+
+<!-- ============ START: с нуля или черновик ============ -->
+<div id="view-start" class="center-wrap hidden">
+  <div class="step-group">
+    <div class="step-eyebrow">Форма №250</div>
+    <div class="center-card">
+    <a class="back-link" href="#" onclick="event.preventDefault();navigate('landing')">← Назад</a>
+    <div class="center-options">
+      <button class="option-card" onclick="navigate('disclaimer')">
+        <div class="option-title">Начать с нуля</div>
+      </button>
+      <button class="option-card" onclick="importProgress()">
+        <div class="option-title">Загрузить черновик</div>
+      </button>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ============ DISCLAIMER ============ -->
+<div id="view-disclaimer" class="center-wrap hidden">
+  <div class="step-group">
+    <div class="step-eyebrow">Форма №250</div>
+    <div class="center-card">
+    <a class="back-link" href="#" onclick="event.preventDefault();navigate('start')">← Назад</a>
+    <div class="disclaimer-emoji">👋</div>
+    <h2>Пара слов, прежде чем начать</h2>
+    <p class="center-sub">Мы пока умеем помогать не всем — если что-то из этого про вас, лучше сразу обратиться в налоговую напрямую:</p>
+    <ul class="disclaimer-list">
+      <li>вы баллотируетесь на выборную должность или занимаете государственную должность — или вы супруг(а) такого человека;</li>
+      <li>вы хотите стать крупным совладельцем банка, страховой компании или инвестиционного фонда.</li>
+    </ul>
+    <p class="center-sub">Для таких случаев декларация оформляется по особым правилам, а мы их пока не знаем. Если ничего из этого не про вас — просто продолжайте, всё в порядке 🙂</p>
+    <button class="btn primary center-cta" onclick="navigate('yearpick')">Продолжить</button>
+  </div>
+  </div>
+</div>
+
+<!-- ============ ВЫБОР ГОДА (фокусный экран) ============ -->
+<div id="view-yearpick" class="center-wrap hidden">
+  <div class="step-group">
+    <div class="step-eyebrow">Форма №250</div>
+    <div class="center-card">
+    <a class="back-link" href="#" onclick="event.preventDefault();navigate('disclaimer')">← Назад</a>
+    <h2>Выберите год подачи декларации</h2>
+    <select class="year-dropdown yearpick-select" id="year-dropdown-focus" onchange="onYearChange(this)">
+      <option value="2024" disabled>2024 (пока недоступно)</option>
+      <option value="2025" disabled>2025 (пока недоступно)</option>
+      <option value="2026" selected>2026</option>
+    </select>
+    <p class="center-sub">Год — это когда вы подаёте декларацию, а не период, за который указываются сведения. Сейчас доступен только 2026 год.</p>
+    <button class="btn primary center-cta" onclick="navigate('home')">Далее</button>
+  </div>
+  </div>
+</div>
+
+<div class="topbar">
+  <button class="icon-btn" onclick="navigate('landing')" title="Выйти на главную" aria-label="Выйти на главную">←</button>
+  <div style="display:flex;gap:8px;">
+    <button class="btn" onclick="importProgress()">Загрузить файл</button>
+    <button class="btn primary" onclick="saveProgress()">Сохранить черновик</button>
+  </div>
+</div>
+
+<!-- ============ HOME ============ -->
+<div id="view-home" class="home-wrap hidden">
+  <div class="page-eyebrow">Форма декларации №250</div>
+  <h1>
+    Ваши активы на конец <span id="home-asof-year"></span> года
+    <span class="help-wrap">
+      <button class="help-btn" onclick="toggleHelp('asof-help')" aria-label="Почему эта дата?">?</button>
+      <div class="info-popover hidden" id="asof-help-pop">
+        Если декларация подаётся в 2026 году, указываются данные на конец предыдущего года —
+        по состоянию на 31 декабря 2025-го.
+      </div>
+    </span>
+  </h1>
+
+  <div class="grid" id="home-grid"></div>
+
+  <div class="finish-cta">
+    <div>
+      <div style="font-weight:600;font-size:14px;">Завершение декларации</div>
+      <div class="label">Профиль и&nbsp;итоговый экспорт — в&nbsp;конце</div>
+    </div>
+    <button class="btn" onclick="navigate('finish')">Перейти к&nbsp;завершению</button>
+  </div>
+</div>
+
+<!-- ============ APP LAYOUT (section pages + finish) ============ -->
+<div id="view-app" class="app-layout hidden">
+  <div class="sidebar">
+    <a class="back" href="#" onclick="event.preventDefault();navigate('home')">← На&nbsp;главную</a>
+    <div class="sidebar-date" id="sidebar-date"></div>
+    <div id="sidebar-nav"></div>
+    <div class="sidebar-divider"></div>
+    <div class="nav-item" id="nav-finish" onclick="navigate('finish')">
+      <span class="label">Завершение</span>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+// ---------- data model (placeholder texts, no real content yet) ----------
+const sections = {
+  money: {
+    title: "Деньги и инвестиции",
+    icon: "💰",
+    desc: "Наличные, счета за&nbsp;рубежом, ценные бумаги, золото, цифровые активы, брокерские счета",
+    items: [
+      {id:"cash", title:"Наличные сбережения", q:"Были ли&nbsp;у&nbsp;вас сбережения в&nbsp;наличных (тенге и&nbsp;другая валюта) $DATE$?", hint:"Крупные суммы, например, от&nbsp;5000$ / 3 млн тенге / 500 тыс. руб.",
+        recommendYes:[
+          "Если у&nbsp;вас были наличные, по&nbsp;правилам их&nbsp;нужно декларировать. Но&nbsp;в&nbsp;законе не&nbsp;указано, на&nbsp;какие суммы это распространяется — решение остается за&nbsp;вами.",
+          "<strong>Почему декларировать наличные может быть важно?</strong> Если вы&nbsp;храните много наличных и&nbsp;потом сделаете крупную покупку, а&nbsp;средства на&nbsp;счетах в&nbsp;банках не&nbsp;изменятся, могут возникнуть вопросы, откуда вдруг взялись деньги.",
+          "Поэтому рекомендуем задекларировать значимую сумму наличных — особенно если вы&nbsp;уже использовали ее&nbsp;для покупок или планируете использовать в&nbsp;будущем.",
+          "Хотите внести сведения про наличные деньги в&nbsp;декларацию?"
+        ]
+      },
+      {id:"accounts", title:"Счета в&nbsp;иностранных банках", q:"Были ли&nbsp;у&nbsp;вас деньги на&nbsp;счетах в&nbsp;иностранных банках $DATE$?", hint:"Считаются карточные счета, текущие и&nbsp;накопительные счета, депозиты (вклады). Не&nbsp;считаются кредитные карты, брокерские счета, металлические счета.",
+        recommendYes:[
+          "Итак, у&nbsp;вас были счета в&nbsp;иностранных банках. Давайте вместе разберемся, нужно ли&nbsp;их&nbsp;декларировать.",
+          "По&nbsp;правилам декларировать обязательно, если в&nbsp;сумме на&nbsp;них было больше <strong>3 932 000 тенге</strong> — именно на&nbsp;дату 31.12.2025.",
+          "Если денег было меньше, декларировать вы&nbsp;не&nbsp;обязаны, но&nbsp;по&nbsp;желанию можете.",
+          "Что делать дальше:<br>— Если уже знаете, что ваша сумма меньше порога — смело выбирайте «Не&nbsp;вносить» ниже. Кстати, я&nbsp;уже посчитал: 3 932 000 ₸ ≈ 613 тыс. ₽ / 7 824 $ / 6 645 €.<br>— Если не&nbsp;уверены — посчитайте суммарный остаток по&nbsp;всем иностранным счетам на&nbsp;31.12.2025 и&nbsp;сравните с&nbsp;порогом.",
+          {type:"tip", text:"Если у&nbsp;вас российские банки, справку с&nbsp;уже посчитанными суммами можно выгрузить прямо из&nbsp;онлайн-банка.", link:"/guides/bank-statements.pdf"},
+          "Хотите внести сведения о&nbsp;счетах в&nbsp;иностранных банках в&nbsp;декларацию?"
+        ]
+      },
+      {id:"securities", title:"Ценные бумаги", q:"Были ли&nbsp;у&nbsp;вас акции, облигации или другие инвест-инструменты из&nbsp;списка $DATE$?", hint:"Считаются акции, облигации, ПИФ, ETF, БПИФ, опционы и&nbsp;фьючерсы, инвестиционные ноты. Не&nbsp;считаются деньги на&nbsp;брокерском счете — для них отдельный раздел.",
+        recommendYes:[
+          "Итак, у&nbsp;вас были ценные бумаги. Давайте разберемся, нужно ли&nbsp;их&nbsp;декларировать.",
+          "Здесь порога нет: если бумаги были у&nbsp;вас на&nbsp;31.12.2025, их&nbsp;нужно задекларировать — независимо от&nbsp;суммы.",
+          {type:"tip", text:"Если вы&nbsp;инвестировали через российских брокеров или банки, то&nbsp;можете узнать все нужное о&nbsp;ценных бумагах из&nbsp;справки. Ее&nbsp;можно выгрузить онлайн.", link:"/guides/bank-statements.pdf"},
+          "Хотите внести сведения о&nbsp;ценных бумагах в&nbsp;декларацию?"
+        ]
+      },
+      {id:"brokerage", title:"Брокерские счета", q:"Были ли&nbsp;у&nbsp;вас зарубежные брокерские счета $DATE$?", hint:"Счет у&nbsp;брокера за&nbsp;пределами Казахстана — например, для покупки акций и&nbsp;облигаций.",
+        recommendYes:[
+          "Декларировать нужно не&nbsp;сам счет, а&nbsp;свободные деньги на&nbsp;нем — те, что просто лежали и&nbsp;не&nbsp;были вложены в&nbsp;бумаги.",
+          "Если все деньги были вложены в&nbsp;акции или облигации, а&nbsp;свободного остатка не&nbsp;осталось — этот раздел заполнять не&nbsp;нужно. Сами бумаги указываются в&nbsp;разделе «Ценные бумаги».",
+          "Порога по&nbsp;сумме нет: любой свободный остаток на&nbsp;31.12.2025 нужно указать.",
+          {type:"tip", text:"Если вы&nbsp;инвестировали через российских брокеров или банки, остаток на&nbsp;брокерском счете виден в&nbsp;справке. Ее&nbsp;можно выгрузить онлайн.", link:"/guides/bank-statements.pdf"},
+          "Хотите внести сведения о&nbsp;брокерских счетах в&nbsp;декларацию?"
+        ]
+      },
+      {id:"gold", title:"Золотые слитки и монеты", q:"Были ли&nbsp;у&nbsp;вас золотые слитки или монеты $DATE$?", hint:"Только физическое золото: слитки и&nbsp;инвестиционные монеты. Не&nbsp;считаются золотые счета в&nbsp;банках, золотые ETF, коллекционные монеты и&nbsp;украшения.",
+        recommendYes:[
+          "По&nbsp;правилам инвестиционное золото декларируется независимо от&nbsp;веса и&nbsp;от&nbsp;страны хранения — и&nbsp;в&nbsp;Казахстане, и&nbsp;за&nbsp;рубежом, в&nbsp;банковской ячейке или дома.",
+          "Хотите внести сведения о&nbsp;золоте в&nbsp;декларацию?"
+        ]
+      },
+      {id:"digital", title:"Криптовалюта и&nbsp;цифровые активы", q:"Были ли&nbsp;у&nbsp;вас криптовалюты или другие цифровые активы $DATE$?", hint:"Bitcoin, Ethereum, USDT, USDC и&nbsp;другие криптовалюты, а&nbsp;также NFT. Неважно, где хранились: на&nbsp;бирже, в&nbsp;приложении, на&nbsp;электронном или аппаратном кошельке.",
+        recommendYes:[
+          "По&nbsp;правилам цифровые активы декларируются независимо от&nbsp;суммы и&nbsp;от&nbsp;того, где они хранились — на&nbsp;казахстанской бирже, зарубежной, в&nbsp;приложении или на&nbsp;вашем кошельке.",
+          "Хотите внести сведения о&nbsp;цифровых активах в&nbsp;декларацию?"
+        ]
+      },
+    ]
+  },
+  property: {
+    title: "Недвижимость и&nbsp;транспорт за&nbsp;рубежом",
+    icon: "🏠",
+    desc: "Недвижимость, транспортные средства, долевое участие в&nbsp;строительстве",
+    items: [
+      {id:"realestate", title:"Недвижимость за&nbsp;рубежом", q:"Была ли&nbsp;у&nbsp;вас недвижимость за&nbsp;рубежом $DATE$?",
+        hint:"Любая недвижимость, зарегистрированная лично на&nbsp;вас. Жилье, земля, коммерческие объекты и&nbsp;другое.",
+        recommendYes:[
+          "Сюда входит: земельный участок, дом, дача, квартира, апартаменты, кладовая, гараж, офис, парковочное место, коммерческое здание. Если такой объект за&nbsp;рубежом — его нужно указать, независимо от&nbsp;стоимости.",
+          {type:"tip", text:"Если недвижимость в&nbsp;России, все данные о&nbsp;ней можно увидеть в&nbsp;личном кабинете на&nbsp;сайте налоговой.", link:"/guides/real-estate.pdf"},
+          "Хотите внести сведения о&nbsp;недвижимости в&nbsp;декларацию?"
+        ]
+      },
+      {id:"vehicle", title:"Транспорт за&nbsp;рубежом", q:"Было ли&nbsp;у&nbsp;вас транспортное средство, зарегистрированное за&nbsp;рубежом, $DATE$?",
+        hint:"Любой транспорт, зарегистрированный лично на&nbsp;вас. Машина, мотоцикл и&nbsp;другое.",
+        recommendYes:[
+          "Сюда входит: легковой автомобиль, мотоцикл, прицеп, квадроцикл, снегоход. Если он&nbsp;зарегистрирован за&nbsp;рубежом — нужно указать, независимо от&nbsp;стоимости.",
+          {type:"tip", text:"Если у&nbsp;вас несколько машин в&nbsp;России, все они видны сразу в&nbsp;личном кабинете на&nbsp;сайте налоговой — не&nbsp;нужно искать каждый СТС отдельно.", link:"/guides/vehicles.pdf"},
+          "Хотите внести сведения о&nbsp;транспорте в&nbsp;декларацию?"
+        ]
+      },
+      {id:"construction", title:"Долевое участие в&nbsp;строительстве", q:"Была ли&nbsp;у&nbsp;вас недостроенная квартира или другая недвижимость в&nbsp;любой стране $DATE$?",
+        hint:"Вы&nbsp;заключили договор покупки жилья, но&nbsp;оно еще не&nbsp;достроено или не&nbsp;оформлено как ваша собственность.<br><br>Это может быть один из&nbsp;документов:<br>— ДДУ — договор на&nbsp;покупку жилья в&nbsp;строящемся доме;<br>— договор уступки — вы&nbsp;купили право на&nbsp;будущую квартиру у&nbsp;другого покупателя;<br>— договор с&nbsp;жилищным кооперативом — вы&nbsp;платили пай за&nbsp;будущее жилье;<br>— инвестиционный договор — вы&nbsp;внесли деньги и&nbsp;должны были получить квартиру или дом.",
+        recommendYes:[
+          "<strong>Почему это важно для налоговой?</strong> Если у&nbsp;вас скоро появится недвижимость в&nbsp;собственности, у&nbsp;налоговой могут возникнуть вопросы, на&nbsp;какие доходы она куплена. Поэтому стоит показать, что вы&nbsp;заключили договор на&nbsp;покупку жилья раньше — просто оно еще не&nbsp;достроено или не&nbsp;оформлено как ваша собственность на&nbsp;конец года.",
+          "Порога по&nbsp;сумме нет: если договор на&nbsp;покупку жилья был у&nbsp;вас на&nbsp;31.12.2025, его нужно указать.",
+          "Обратите внимание: в&nbsp;этом разделе нужно декларировать и&nbsp;казахстанские, и&nbsp;зарубежные объекты. В&nbsp;отличие от&nbsp;раздела «Недвижимость», где учитывается только зарубежное.",
+          "Хотите внести сведения о&nbsp;долевом участии в&nbsp;декларацию?"
+        ]
+      },
+    ]
+  },
+  business: {
+    title: "Бизнес за&nbsp;рубежом",
+    icon: "🏢",
+    desc: "Доля участия в&nbsp;уставном капитале иностранного юрлица",
+    items: [
+      {id:"capital", title:"Доля в&nbsp;уставном капитале", q:"Был у&nbsp;вас уставный капитал в&nbsp;юрлице за&nbsp;рубежом $DATE$?",
+        hint:"Доля в&nbsp;ООО, LLC или похожей компании, зарегистрированной не&nbsp;в&nbsp;Казахстане. Акции акционерных обществ сюда не&nbsp;входят — для них раздел «Ценные бумаги».",
+        recommendYes:[
+          "Порога по&nbsp;сумме нет: если доля в&nbsp;уставном капитале была у&nbsp;вас на&nbsp;31.12.2025, ее&nbsp;нужно указать — независимо от&nbsp;размера. Неважно, работала ли&nbsp;компания и&nbsp;приносила ли&nbsp;доход.",
+          {type:"tip", text:"Если компания зарегистрирована в&nbsp;России, название, ИНН и&nbsp;размер вашей доли можно бесплатно найти в&nbsp;выписке из&nbsp;ЕГРЮЛ на&nbsp;сайте налоговой.", link:"/guides/egrul.pdf"},
+          "Хотите внести сведения о&nbsp;доле в&nbsp;уставном капитале в&nbsp;декларацию?"
+        ]
+      },
+    ]
+  },
+  ip: {
+    title: "Интеллектуальная собственность",
+    icon: "💡",
+    desc: "Патенты, авторские права и&nbsp;другие объекты ИС",
+    items: [
+      {id:"ipobjects", title:"Объекты интеллектуальной собственности", q:"Были у&nbsp;вас права на&nbsp;товарный знак, программу, изобретение, произведение и&nbsp;т.п. $DATE$?",
+        hint:"Только если есть официально зарегистрированные права. Например, есть патент, свидетельство или регистрационный номер.",
+        recommendYes:[
+          "Порога по&nbsp;сумме нет: если хотя бы&nbsp;один такой объект был у&nbsp;вас на&nbsp;31.12.2025, его нужно указать — независимо от&nbsp;того, приносил ли&nbsp;он&nbsp;доход.",
+          "Неважно, где зарегистрированы права — в&nbsp;Казахстане или в&nbsp;другой стране, декларировать нужно в&nbsp;любом случае.",
+          "Хотите внести сведения об&nbsp;объектах интеллектуальной собственности в&nbsp;декларацию?"
+        ]
+      },
+    ]
+  },
+  credits: {
+    title: "Кредиты за&nbsp;рубежом",
+    icon: "🏦",
+    desc: "Кредиты и&nbsp;займы, полученные от&nbsp;иностранных банков",
+    items: [
+      {id:"bankloans", title:"Кредиты и&nbsp;займы от&nbsp;иностранных банков", q:"Были у&nbsp;вас кредиты от&nbsp;иностранных банков, еще не&nbsp;выплаченные $DATE$?",
+        hint:"Учитывайте долг по&nbsp;кредитной карте, если он&nbsp;не&nbsp;был закрыт на&nbsp;31 декабря. Но&nbsp;если долга по&nbsp;кредитке не&nbsp;было, то&nbsp;она не&nbsp;учитывается.<br>И&nbsp;если у&nbsp;вас были кредиты, выданные вам как ИП, они тоже считаются.",
+        recommendYes:[
+          "Учитывается остаток долга именно на&nbsp;31.12.2025. Если вы&nbsp;полностью погасили кредит раньше — указывать его не&nbsp;нужно.",
+          "Порога по&nbsp;сумме нет: если долг был у&nbsp;вас на&nbsp;эту дату, его нужно указать — независимо от&nbsp;суммы.",
+          "Хотите внести сведения о&nbsp;кредите в&nbsp;декларацию?"
+        ]
+      },
+    ]
+  },
+  other: {
+    title: "Другие финансовые обязательства",
+    icon: "📋",
+    desc: "Прочая дебиторская и&nbsp;кредиторская задолженность",
+    items: [
+      {id:"receivable", title:"Обязательства других лиц перед вами", q:"Должен ли&nbsp;был вам кто-то&nbsp;деньги $DATE$ — человек или организация, в&nbsp;любой стране?",
+        hint:"Например, вам должны заплатить по&nbsp;решению суда, по&nbsp;договору займа, по&nbsp;договору о&nbsp;работах, услугах или после поставки товаров.",
+        recommendYes:[
+          "У&nbsp;вас были должники — а&nbsp;есть ли&nbsp;документальное подтверждение? Учитывается только долг с&nbsp;документами: решение суда или исполнительный лист, расписка, договор и&nbsp;т.п. Если такого нет — заполнять нечего.",
+          "Если документы есть, такой долг по&nbsp;правилам нужно задекларировать в&nbsp;любом размере. Но&nbsp;по&nbsp;факту решение, что отражать, остается за&nbsp;вами.",
+          "Обратите внимание: это касается и&nbsp;Казахстана, и&nbsp;других стран.",
+          "Хотите внести сведения об&nbsp;обязательствах перед вами в&nbsp;декларацию?"
+        ]
+      },
+      {id:"payable", title:"Ваши обязательства перед другими", q:"Должны ли&nbsp;вы&nbsp;были кому-то&nbsp;деньги $DATE$ — человеку или организации, кроме банка, в&nbsp;любой стране?",
+        hint:"Например, вы&nbsp;брали в&nbsp;долг у&nbsp;знакомого или компании, не&nbsp;расплатились по&nbsp;договору за&nbsp;работы или услуги, либо есть решение суда о&nbsp;взыскании с&nbsp;вас. Долги перед банками сюда не&nbsp;входят — для них раздел «Кредиты за&nbsp;рубежом».",
+        recommendYes:[
+          "У&nbsp;вас были такие долги — а&nbsp;есть ли&nbsp;документальное подтверждение? Учитывается только долг с&nbsp;документами: решение суда или исполнительный лист, расписка, договор и&nbsp;т.п. Если такого нет — заполнять нечего.",
+          "Если документы есть, такой долг по&nbsp;правилам нужно задекларировать в&nbsp;любом размере. Но&nbsp;по&nbsp;факту решение, что отражать, остается за&nbsp;вами.",
+          "Обратите внимание: это касается и&nbsp;Казахстана, и&nbsp;других стран.",
+          "Хотите внести сведения о&nbsp;ваших обязательствах в&nbsp;декларацию?"
+        ]
+      },
+    ]
+  },
+};
+
+const sectionOrder = ["money","property","business","ip","credits","other"];
+
+// ---------- reporting period ----------
+// Only 2026 is selectable in this MVP. Data is always reported as of 31 Dec of the prior year.
+const reportYear = 2026;
+function asOfDate(){ return "31.12." + (reportYear - 1); }
+function onYearChange(select){
+  // In this MVP only 2026 is selectable — disabled options can't actually be chosen,
+  // this handler just guards against unexpected values and re-renders dates.
+  const val = parseInt(select.value, 10);
+  if(val === 2026){
+    fillDateBadges();
+  } else {
+    select.value = "2026";
+  }
+}
+function fillDateBadges(){
+  const homeYear = document.getElementById("home-asof-year");
+  if(homeYear) homeYear.textContent = reportYear - 1;
+  const sidebarEl = document.getElementById("sidebar-date");
+  if(sidebarEl) sidebarEl.textContent = "Данные на " + asOfDate();
+}
+
+// маленькая всплывающая подсказка у заголовка (например, «почему эта дата?»)
+function toggleHelp(id){
+  const pop = document.getElementById(`${id}-pop`);
+  if(pop) pop.classList.toggle("hidden");
+}
+document.addEventListener("click", (e)=>{
+  // клик вне подсказки — закрываем все открытые
+  if(e.target.closest(".help-wrap")) return;
+  document.querySelectorAll(".info-popover").forEach(p=>p.classList.add("hidden"));
+});
+function withDate(text){
+  return text.replace("$DATE$", "на " + asOfDate());
+}
+
+// runtime state per item — demo only, in-memory (not persisted)
+// expanded: карточка сейчас развернута
+// everOpened: карточку хотя бы&nbsp;раз открывали (снимает метку "не&nbsp;открыто")
+// answered: null/true/false — первичный ответ на&nbsp;вопрос
+// decision: null/'include'/'exclude' — итоговое решение по&nbsp;разделу
+const state = {};
+sectionOrder.forEach(s=>{
+  state[s] = {};
+  sections[s].items.forEach(it=>{
+    state[s][it.id] = {expanded:false, everOpened:false, answered:null, decision:null, thinking:false, thinkToken:0, chatLog:[], rows:[], chatVisible:false, groups:[], draft:null};
+  });
+});
+
+function sectionStatus(key){
+  const items = sections[key].items;
+  const states = items.map(it=>state[key][it.id]);
+  const noneOpened = states.every(s=>!s.everOpened);
+  const allDecided = states.every(s=>s.decision !== null);
+  const includedItems = items.filter(it=>state[key][it.id].decision === "include");
+  const anyIncluded = includedItems.length > 0;
+  const allDataFilled = includedItems.every(it=>isDataFilled(key, it.id));
+  if(noneOpened) return "notstarted";
+  if(!allDecided) return "inprogress";
+  if(!anyIncluded) return "noassets";
+  if(!allDataFilled) return "hasgaps";
+  return "ready";
+}
+const statusLabel = {
+  notstarted:"Не&nbsp;начат", noassets:"Нет активов", hasgaps:"Есть пропуски", ready:"Готово", inprogress:"В&nbsp;процессе"
+};
+
+// ---------- routing ----------
+function navigate(route){
+  window.location.hash = route === "landing" ? "" : route;
+}
+
+window.addEventListener("hashchange", render);
+
+const PRE_VIEWS = ["view-landing","view-start","view-disclaimer","view-yearpick"];
+
+function showOnlyView(id){
+  PRE_VIEWS.concat(["view-home","view-app"]).forEach(v=>{
+    const el = document.getElementById(v);
+    if(el) el.classList.toggle("hidden", v !== id);
+  });
+  // шапка с «Сохранить прогресс» уместна только внутри самого инструмента,
+  // на посадочной/онбординге/выборе она отвлекает от главного действия на экране
+  const topbar = document.querySelector(".topbar");
+  if(topbar) topbar.classList.toggle("hidden", id !== "view-home" && id !== "view-app");
+}
+
+function render(){
+  fillDateBadges();
+  const hash = window.location.hash.replace("#/","").replace("#","");
+
+  if(!hash || hash === "landing"){
+    showOnlyView("view-landing");
+  } else if(hash === "start"){
+    showOnlyView("view-start");
+  } else if(hash === "disclaimer"){
+    showOnlyView("view-disclaimer");
+  } else if(hash === "yearpick"){
+    showOnlyView("view-yearpick");
+  } else if(hash === "home"){
+    showOnlyView("view-home");
+    renderHome();
+  } else {
+    showOnlyView("view-app");
+    renderSidebar(hash);
+    if(hash === "finish"){
+      renderFinish();
+    } else if(sections[hash]){
+      renderSection(hash);
+    } else {
+      navigate("home");
+    }
+  }
+}
+
+function renderHome(){
+  const grid = document.getElementById("home-grid");
+  grid.innerHTML = "";
+  sectionOrder.forEach(key=>{
+    const s = sections[key];
+    const st = sectionStatus(key);
+    const card = document.createElement("div");
+    card.className = "card";
+    card.onclick = ()=>navigate(key);
+    card.innerHTML = `
+      <div class="icon">${s.icon}</div>
+      <h3>${s.title}</h3>
+      <p>${s.desc}</p>
+      <span class="status ${st}">${statusLabel[st]}</span>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderSidebar(activeKey){
+  const nav = document.getElementById("sidebar-nav");
+  nav.innerHTML = "";
+  sectionOrder.forEach(key=>{
+    const s = sections[key];
+    const st = sectionStatus(key);
+    const item = document.createElement("div");
+    item.className = "nav-item" + (key===activeKey ? " active":"");
+    item.onclick = ()=>navigate(key);
+    item.innerHTML = `<span class="label"><span class="nav-dot ${st}"></span>${s.title}</span>`;
+    nav.appendChild(item);
+  });
+  document.getElementById("nav-finish").classList.toggle("active", activeKey==="finish");
+}
+
+// ---------- поля ручного ввода для раздела «Деньги и инвестиции» ----------
+// у каждого пункта — свой набор колонок таблицы, повторяющий графы официальной формы
+const fieldConfig = {
+  cash: [
+    {key:"amount", label:"Сумма", type:"number", placeholder:"0", dated:true, money:true},
+    {key:"currency", label:"Валюта", type:"currency", placeholder:"Выберите валюту"},
+  ],
+};
+
+// Справочник банков: действующие банки из реестра ЦБ РФ,
+// ИНН получены из ЕГРЮЛ через dadata (скрипт fetch-bank-inn.py).
+const BANKS_RU = [
+  // самые частые — наверх списка
+  {inn:"7707083893", name:"ПАО Сбербанк", bic:"044525225", aliases:["сбер","сбербанк"]},
+  {inn:"7702070139", name:"Банк ВТБ (ПАО)", bic:"044525187", aliases:["втб"]},
+  {inn:"7710140679", name:"АО «ТБанк»", bic:"044525974", aliases:["тбанк","тинькофф","т-банк"]},
+  {inn:"7728168971", name:"АО «АЛЬФА-БАНК»", bic:"044525593", aliases:["альфа","альфабанк","альфа-банк"]},
+  {inn:"9703077050", name:"ООО «ОЗОН Банк»", bic:"044525068", aliases:["озон","ozon"]},
+  {inn:"7750004168", name:"АО «Яндекс Банк»", bic:"044525677", aliases:["яндекс","yandex"]},
+  {inn:"4401116480", name:"ПАО «Совкомбанк»", bic:"044525987", aliases:["совком"]},
+  {inn:"7744001497", name:"Банк ГПБ (АО)", bic:"044525823", aliases:["газпромбанк","гпб"]},
+  {inn:"7725114488", name:"АО «Россельхозбанк»", bic:"044525111", aliases:["россельхоз","рсхб"]},
+  {inn:"7744000302", name:"АО «Райффайзенбанк»", bic:"044525700", aliases:["райффайзен"]},
+  {inn:"7734202860", name:"ПАО «МОСКОВСКИЙ КРЕДИТНЫЙ БАНК»", bic:"044525659", aliases:["мкб","московский кредитный"]},
+  {inn:"7744000912", name:"ПАО «Банк ПСБ»", bic:"044525555", aliases:["псб","промсвязьбанк"]},
+  {inn:"0274062111", name:"ПАО «БАНК УРАЛСИБ»", bic:"044525787", aliases:["уралсиб"]},
+  {inn:"1653001805", name:"ПАО «АК БАРС» БАНК", bic:"049205805", aliases:["ак барс"]},
+  {inn:"7702045051", name:"ПАО «МТС-Банк»", bic:"044525232", aliases:["мтс"]},
+  {inn:"7708001614", name:"АО «ОТП Банк»", bic:"044525311", aliases:["отп"]},
+  {inn:"7744000126", name:"КБ «Ренессанс Кредит» (ООО)", bic:"044525135", aliases:["ренессанс"]},
+  {inn:"7707056547", name:"АО «Банк Русский Стандарт»", bic:"044525151", aliases:["русский стандарт"]},
+  {inn:"7725038124", name:"АО «Банк ДОМ.РФ»", bic:"044525266", aliases:["дом рф","домрф"]},
+  {inn:"9721194461", name:"ООО «Банк Точка»", bic:"044525104", aliases:["точка"]},
+  // остальные — по алфавиту
+  {inn:"6453033870", name:"(АО «Банк »Агророс«)", bic:"046311772"},
+  {inn:"2801023444", name:"«Азиатско-Тихоокеанский Банк» (АО)", bic:"041012765"},
+  {inn:"7744001828", name:"«Банк »МБА-МОСКВА« ООО", bic:"044525502"},
+  {inn:"1653016664", name:"«Банк Заречье» (АО)", bic:"049205772"},
+  {inn:"7706006720", name:"«Банк Кремлевский» ООО", bic:"044525196"},
+  {inn:"7744002405", name:"«БНП ПАРИБА БАНК» АО", bic:"044525185"},
+  {inn:"3803202031", name:"«Братский АНКБ» АО", bic:"042520842"},
+  {inn:"7744003007", name:"«Вэйбанк» АО", bic:"044525453"},
+  {inn:"7708050033", name:"«ЗИРААТ БАНК (МОСКВА)» (АО)", bic:"044525116"},
+  {inn:"7744003342", name:"«Коммерческий Индо Банк» ООО", bic:"044525500"},
+  {inn:"7744001144", name:"«Нацинвестпромбанк» (АО)", bic:"044525413"},
+  {inn:"7734052439", name:"«Республиканский Кредитный Альянс» ООО", bic:"044525860"},
+  {inn:"7718120593", name:"«Русьуниверсалбанк» (ООО)", bic:"044525674"},
+  {inn:"7733043350", name:"«СДМ-Банк» (ПАО)", bic:"044525685"},
+  {inn:"1101300820", name:"«Северный Народный Банк» (АО)", bic:"048702781"},
+  {inn:"2224009042", name:"«СИБСОЦБАНК» ООО", bic:"040173745"},
+  {inn:"7717011200", name:"«СОЦИУМ-БАНК» (ООО)", bic:"044525409"},
+  {inn:"7724187003", name:"Азия-Инвест Банк (АО)", bic:"044525234"},
+  {inn:"7750004217", name:"АйСиБиСи Банк (АО)", bic:"044525551"},
+  {inn:"7736046991", name:"АКБ «Абсолют Банк» (ПАО)", bic:"044525976"},
+  {inn:"1435138944", name:"АКБ «Алмазэргиэнбанк» АО", bic:"049805770"},
+  {inn:"7706027060", name:"АКБ «БЭНК ОФ ЧАЙНА» (АО)", bic:"044525213"},
+  {inn:"7729003482", name:"АКБ «Держава» ПАО", bic:"044525675"},
+  {inn:"4205001450", name:"АКБ «Кузбассхимбанк» (ПАО)", bic:"043207793"},
+  {inn:"7705260427", name:"АКБ «Ланта-Банк» (АО)", bic:"044525348"},
+  {inn:"0411006129", name:"АКБ «НООСФЕРА» (АО)", bic:"044525981"},
+  {inn:"7703211512", name:"АКБ «НРБанк» (АО)", bic:"044525933"},
+  {inn:"7703074601", name:"АКБ «ПЕРЕСВЕТ» (ПАО)", bic:"044525275"},
+  {inn:"7726000596", name:"АКБ «СЛАВИЯ» (АО)", bic:"044525318"},
+  {inn:"7706028882", name:"АКБ «ТЕНДЕР-БАНК» (АО)", bic:"044525131"},
+  {inn:"7730059592", name:"АКБ «Трансстройбанк» (АО)", bic:"044525326"},
+  {inn:"7704113772", name:"АКБ «ФОРА-БАНК» (АО)", bic:"044525341"},
+  {inn:"5610032972", name:"АКБ «Форштадт» (АО)", bic:"045354860"},
+  {inn:"1653011835", name:"АКБ «Энергобанк» (АО)", bic:"049205770"},
+  {inn:"7831000122", name:"АО «АБ »РОССИЯ«", bic:"044030861"},
+  {inn:"5503067018", name:"АО «Авто Финанс Банк»", bic:"044525147"},
+  {inn:"6439044245", name:"АО «БАЛАКОВО-БАНК»", bic:"046311890"},
+  {inn:"1655415696", name:"АО «Банк 131»", bic:"049205131"},
+  {inn:"6915001057", name:"АО «Банк »Торжок«", bic:"042809953"},
+  {inn:"5405114781", name:"АО «Банк Акцепт»", bic:"045004815"},
+  {inn:"4704470120", name:"АО «БАНК БЕРЕЙТ»", bic:"044030905"},
+  {inn:"7709056550", name:"АО «Банк БЖФ»", bic:"044525464"},
+  {inn:"7720069320", name:"АО «Банк ДАЛЕНА»", bic:"044525371"},
+  {inn:"7708022300", name:"АО «Банк Интеза»", bic:"044525922"},
+  {inn:"7703122887", name:"АО «Банк Кредит Свисс (Москва)»", bic:"044525236"},
+  {inn:"5612031491", name:"АО «БАНК ОРЕНБУРГ»", bic:"045354885"},
+  {inn:"3525023780", name:"АО «БАНК СГБ»", bic:"044525786"},
+  {inn:"7709315684", name:"АО «Банк ФИНАМ»", bic:"044525604", aliases:["финам"]},
+  {inn:"7750004270", name:"АО «Банк Финсервис»", bic:"044525079"},
+  {inn:"9102019769", name:"АО «Банк ЧБРР»", bic:"043510101"},
+  {inn:"5460000016", name:"АО «БКС Банк»", bic:"044525631", aliases:["бкс"]},
+  {inn:"7702000406", name:"АО «БМ-Банк»", bic:"044525062"},
+  {inn:"3327100351", name:"АО «ВЛАДБИЗНЕСБАНК»", bic:"042202719"},
+  {inn:"4026006420", name:"АО «Газэнергобанк»", bic:"042908701"},
+  {inn:"7750005820", name:"АО «ГЕНБАНК»", bic:"043510123"},
+  {inn:"7831001239", name:"АО «ГОРБАНК»", bic:"044030814"},
+  {inn:"6905011218", name:"АО «ГУТА-БАНК»", bic:"044525911"},
+  {inn:"1835047032", name:"АО «Датабанк»", bic:"042202884"},
+  {inn:"7705205000", name:"АО «Денизбанк Москва»", bic:"044525102"},
+  {inn:"5503008333", name:"АО «ИТ Банк»", bic:"045209702"},
+  {inn:"7706195570", name:"АО «ИШБАНК»", bic:"044525624"},
+  {inn:"7831000098", name:"АО «КАБ »Викинг«", bic:"044030869"},
+  {inn:"1501012538", name:"АО «Классик Эконом Банк»", bic:"049033758"},
+  {inn:"7710295979", name:"АО «КОММЕРЦБАНК (ЕВРАЗИЯ)»", bic:"044525105"},
+  {inn:"5260059340", name:"АО «КОШЕЛЕВ-БАНК»", bic:"043601742"},
+  {inn:"7705148464", name:"АО «Кредит Европа Банк (Россия)»", bic:"044525767"},
+  {inn:"2309023960", name:"АО «Кубаньторгбанк»", bic:"040349718"},
+  {inn:"4216004076", name:"АО «Кузнецкбизнесбанк»", bic:"043207740"},
+  {inn:"7744002363", name:"АО «МБ Банк»", bic:"044525184"},
+  {inn:"7705256396", name:"АО «Мидзухо Банк (Москва)»", bic:"044525107"},
+  {inn:"7727065444", name:"АО «МОСКОМБАНК»", bic:"044525476"},
+  {inn:"7703213534", name:"АО «МСП Банк»", bic:"044525108"},
+  {inn:"7708018456", name:"АО «НДБанк»", bic:"044525182"},
+  {inn:"7734205131", name:"АО «НК Банк»", bic:"044525278"},
+  {inn:"7744001024", name:"АО «НС Банк»", bic:"044525158"},
+  {inn:"6625000100", name:"АО «ПЕРВОУРАЛЬСКБАНК»", bic:"046577402"},
+  {inn:"4346021555", name:"АО «Первый Дортрансбанк»", bic:"043304757"},
+  {inn:"7713073043", name:"АО «Первый Инвестиционный Банк»", bic:"044525408"},
+  {inn:"7703122164", name:"АО «ПроБанк»", bic:"044525203"},
+  {inn:"3801002781", name:"АО «РЕАЛИСТ БАНК»", bic:"044525285"},
+  {inn:"7710401987", name:"АО «РенКап Банк»", bic:"044525202"},
+  {inn:"2703006553", name:"АО «Роял Кредит Банк»", bic:"040507750"},
+  {inn:"7744003127", name:"АО «РФК-банк»", bic:"044525257"},
+  {inn:"6453031840", name:"АО «Свой Банк»", bic:"044525827"},
+  {inn:"7831001422", name:"АО «Сити Инвест Банк»", bic:"044030702"},
+  {inn:"7750005450", name:"АО «СМБСР Банк»", bic:"044525470"},
+  {inn:"4101011782", name:"АО «Солид Банк»", bic:"040507595"},
+  {inn:"7831000034", name:"АО «СПБ Банк»", bic:"044525186"},
+  {inn:"4706006731", name:"АО «СЭБ Банк»", bic:"044030747"},
+  {inn:"6154035357", name:"АО «Таганрогбанк»", bic:"046015946"},
+  {inn:"1653003834", name:"АО «ТАТСОЦБАНК»", bic:"049205703"},
+  {inn:"7750004175", name:"АО «ТелеПорт Банк»", bic:"044525273"},
+  {inn:"1653016689", name:"АО «Тимер Банк»", bic:"044525567"},
+  {inn:"7750004136", name:"АО «Тойота Банк»", bic:"044525630"},
+  {inn:"4214005204", name:"АО «Углеметбанк»", bic:"047501787"},
+  {inn:"7449014065", name:"АО «УРАЛПРОМБАНК»", bic:"047501906"},
+  {inn:"7750004231", name:"АО «Ури Банк»", bic:"044525163"},
+  {inn:"6450013459", name:"АО «Экономбанк»", bic:"046311722"},
+  {inn:"7708397772", name:"АО «Экспобанк»", bic:"044525460", aliases:["экспобанк"]},
+  {inn:"7750004030", name:"АО «Эм-Ю-Эф-Джи Банк (Евразия)»", bic:"044525361"},
+  {inn:"8603001619", name:"АО АБ «Капитал»", bic:"044525738"},
+  {inn:"2447002227", name:"АО АИКБ «Енисейский объединенный банк»", bic:"040407523"},
+  {inn:"7710050376", name:"АО АКБ «Алеф-Банк»", bic:"044525268"},
+  {inn:"7703115760", name:"АО АКБ «ЕВРОФИНАНС МОСНАРБАНК»", bic:"044525204"},
+  {inn:"7744000038", name:"АО АКБ «МЕЖДУНАРОДНЫЙ ФИНАНСОВЫЙ КЛУБ»", bic:"044525632"},
+  {inn:"7706196340", name:"АО АКБ «НОВИКОМБАНК»", bic:"044525162", aliases:["новикомбанк"]},
+  {inn:"7707025725", name:"АО АКБ «ЦентроКредит»", bic:"044525514"},
+  {inn:"5902300019", name:"АО АКИБ «Почтобанк»", bic:"045773705"},
+  {inn:"1653003601", name:"АО Банк «Аверс»", bic:"049205774"},
+  {inn:"7303024532", name:"АО Банк «Венец»", bic:"047308813"},
+  {inn:"7703033450", name:"АО БАНК «МОСКВА-СИТИ»", bic:"044525800"},
+  {inn:"7750056688", name:"АО Банк «Национальный стандарт»", bic:"044525498"},
+  {inn:"7831001013", name:"АО Банк «Объединенный капитал»", bic:"044030826"},
+  {inn:"7831000965", name:"АО Банк «ПСКБ»", bic:"044030852"},
+  {inn:"7709345294", name:"АО Банк «Развитие-Столица»", bic:"044525984"},
+  {inn:"8602190258", name:"АО БАНК «СНГБ»", bic:"047144709"},
+  {inn:"7714056040", name:"АО Банк Инго", bic:"044525148"},
+  {inn:"3702558680", name:"АО БАНК НБС", bic:"044525949"},
+  {inn:"6608003052", name:"АО Банк Синара", bic:"046577756"},
+  {inn:"3015010952", name:"АО ЕАТПБанк", bic:"041203715"},
+  {inn:"5026014060", name:"АО КБ «АГРОПРОМКРЕДИТ»", bic:"044525710"},
+  {inn:"6025001487", name:"АО КБ «ВАКОБАНК»", bic:"045853774"},
+  {inn:"7744001930", name:"АО КБ «КОСМОС»", bic:"044525254"},
+  {inn:"2204000595", name:"АО КБ «Модульбанк»", bic:"044525979", aliases:["модульбанк"]},
+  {inn:"7303007640", name:"АО КБ «НИБ»", bic:"043601842"},
+  {inn:"5401122100", name:"АО КБ «Пойдем!»", bic:"044525732"},
+  {inn:"7744002211", name:"АО КБ «РУСНАРБАНК»", bic:"044525466"},
+  {inn:"2503001251", name:"АО КБ «САММИТ БАНК»", bic:"040507840"},
+  {inn:"7744001070", name:"АО КБ «Соколовский»", bic:"044525901"},
+  {inn:"6316028910", name:"АО КБ «Солидарность»", bic:"043601706"},
+  {inn:"5902300072", name:"АО КБ «Урал ФД»", bic:"045773790"},
+  {inn:"4346013603", name:"АО КБ «Хлынов»", bic:"043304711"},
+  {inn:"7750004009", name:"АО КБ «ЮНИСТРИМ»", bic:"044525550"},
+  {inn:"5243006236", name:"АО комбанк «Арзамас»", bic:"042202731"},
+  {inn:"7750005588", name:"АО МОСОБЛБАНК", bic:"044525521"},
+  {inn:"7744001105", name:"АО МС Банк Рус", bic:"044525490"},
+  {inn:"3442028061", name:"АО НОКССБАНК", bic:"041806831"},
+  {inn:"3123004233", name:"АО УКБ «Белгородсоцбанк»", bic:"041403701"},
+  {inn:"7710030411", name:"АО ЮниКредит Банк", bic:"044525545", aliases:["юникредит"]},
+  {inn:"7725068827", name:"БАНК «АГОРА» ООО", bic:"044525709"},
+  {inn:"7736153344", name:"Банк «ВБРР» (АО)", bic:"044525880", aliases:["вбрр"]},
+  {inn:"6227005702", name:"Банк «Вятич» (АО)", bic:"046126701"},
+  {inn:"6501021443", name:"Банк «ИТУРУП» (ООО)", bic:"046401772"},
+  {inn:"1215059221", name:"Банк «Йошкар-Ола» (ПАО)", bic:"042202906"},
+  {inn:"5404154492", name:"Банк «Левобережный» (ПАО)", bic:"045004850"},
+  {inn:"5190900165", name:"БАНК «МСКБ» (АО)", bic:"044705768"},
+  {inn:"7750004305", name:"Банк «РЕСО Кредит» (АО)", bic:"044525451"},
+  {inn:"6829000290", name:"Банк «СЕРВИС РЕЗЕРВ» (АО)", bic:"044525178"},
+  {inn:"7423004062", name:"Банк «Снежинский» АО", bic:"047501799"},
+  {inn:"7831001567", name:"Банк «ТРАСТ» (ПАО)", bic:"044525635"},
+  {inn:"7725038220", name:"Банк Глобус (АО)", bic:"044525473"},
+  {inn:"7724096412", name:"Банк ИПБ (АО)", bic:"044525402"},
+  {inn:"5902300033", name:"Банк Пермь (АО)", bic:"045773756"},
+  {inn:"3900001002", name:"ББР Банк (АО)", bic:"044525769"},
+  {inn:"7601000618", name:"ИКБР «ЯРИНТЕРБАНК» (ООО)", bic:"047888728"},
+  {inn:"7717002773", name:"ИНВЕСТТОРГБАНК АО", bic:"044525267"},
+  {inn:"7712014310", name:"ИНГ БАНК (ЕВРАЗИЯ) АО", bic:"044525222"},
+  {inn:"3807002717", name:"КБ «Байкалкредобанк» (АО)", bic:"042520872"},
+  {inn:"7710014949", name:"КБ «Дж.П. Морган Банк Интернешнл» (ООО)", bic:"044525218"},
+  {inn:"6500001204", name:"КБ «Долинск» (АО)", bic:"046401727"},
+  {inn:"7710142732", name:"КБ «Крокус-Банк» (ООО)", bic:"044525881"},
+  {inn:"2312016641", name:"КБ «Кубань Кредит» ООО", bic:"040349722"},
+  {inn:"7750003943", name:"КБ «ЛОКО-Банк» (АО)", bic:"044525161"},
+  {inn:"7744000920", name:"КБ «Максима» (ООО)", bic:"044525435"},
+  {inn:"7750005612", name:"КБ «Москоммерцбанк» (АО)", bic:"044525951"},
+  {inn:"7744002652", name:"КБ «Новый век» (ООО)", bic:"044525517"},
+  {inn:"7609016017", name:"КБ «РБА» (ООО)", bic:"044525082"},
+  {inn:"8622002375", name:"КБ «СТРОЙЛЕСБАНК» (ООО)", bic:"047102658"},
+  {inn:"3906098008", name:"КБ «ЭНЕРГОТРАНСБАНК» (АО)", bic:"042748701"},
+  {inn:"7730067441", name:"МКИБ «РОССИТА-БАНК» ООО", bic:"044525747"},
+  {inn:"7714060199", name:"МОРСКОЙ БАНК (АО)", bic:"044525095"},
+  {inn:"7750005845", name:"МП Банк (ООО)", bic:"044525247"},
+  {inn:"1626000087", name:"ООО «АвтоКредитБанк»", bic:"049205795"},
+  {inn:"1657190840", name:"ООО «АЛТЫНБАНК»", bic:"049205919"},
+  {inn:"7727038017", name:"ООО «АТБ» Банк", bic:"044525097"},
+  {inn:"7712002554", name:"ООО «банк Раунд»", bic:"044525739"},
+  {inn:"7744002500", name:"ООО «Банк РСИ»", bic:"044525782"},
+  {inn:"6027006032", name:"ООО «Бланк банк»", bic:"044525801"},
+  {inn:"5047093433", name:"ООО «БМВ Банк»", bic:"044525770"},
+  {inn:"0102000578", name:"ООО «ВБ Банк»", bic:"044525450"},
+  {inn:"7702216772", name:"ООО «Дойче Банк»", bic:"044525101"},
+  {inn:"6227003906", name:"ООО «ЖИВАГО БАНК»", bic:"046126744"},
+  {inn:"6132001298", name:"ООО «ЗЕМКОМБАНК»", bic:"046015078"},
+  {inn:"6325065114", name:"ООО «Земский банк»", bic:"043601811"},
+  {inn:"5617000264", name:"ООО «Инбанк»", bic:"044525308"},
+  {inn:"1650025163", name:"ООО «Камкомбанк»", bic:"049205525"},
+  {inn:"3807000886", name:"ООО «Крона-Банк»", bic:"042520840"},
+  {inn:"7750005901", name:"ООО «КЭБ ЭйчЭнБи Банк»", bic:"044525808"},
+  {inn:"7750004190", name:"ООО «МБ РУС Банк»", bic:"044525159"},
+  {inn:"7750005387", name:"ООО «Ориджин Банк»", bic:"044525340"},
+  {inn:"7744003039", name:"ООО «Первый Клиентский Банк»", bic:"044525134"},
+  {inn:"7750005605", name:"ООО «Пихта Банк»", bic:"044525619"},
+  {inn:"2540015598", name:"ООО «Примтеркомбанк»", bic:"040507717"},
+  {inn:"7706009657", name:"ООО «ПроКоммерцБанк»", bic:"044525699"},
+  {inn:"6449011425", name:"ООО «Промсельхозбанк»", bic:"044525771"},
+  {inn:"7705003797", name:"ООО «СМЛТ Банк»", bic:"044525494"},
+  {inn:"7706074938", name:"ООО «СПЕЦСТРОЙБАНК»", bic:"044525728"},
+  {inn:"7744002660", name:"ООО «Унифондбанк»", bic:"044525488"},
+  {inn:"1901036580", name:"ООО «Хакасский муниципальный банк»", bic:"049514745"},
+  {inn:"6506000327", name:"ООО «Цифра банк»", bic:"044525900"},
+  {inn:"7750005789", name:"ООО «Чайна Констракшн Банк»", bic:"044525777"},
+  {inn:"7750005926", name:"ООО «Чайнасельхозбанк»", bic:"044525673"},
+  {inn:"7750003982", name:"ООО «Ю Би Эс Банк»", bic:"044525733"},
+  {inn:"6455000037", name:"ООО Банк «Саратов»", bic:"046311755"},
+  {inn:"2225019491", name:"ООО КБ «Алтайкапиталбанк»", bic:"040173771"},
+  {inn:"7718104217", name:"ООО КБ «АРЕСБАНК»", bic:"044525229"},
+  {inn:"0541016015", name:"ООО КБ «ВНЕШФИНБАНК»", bic:"040349909"},
+  {inn:"0103001895", name:"ООО КБ «ГТ банк»", bic:"040349789"},
+  {inn:"7202010558", name:"ООО КБ «Дружба»", bic:"047102802"},
+  {inn:"4000000103", name:"ООО КБ «Калуга»", bic:"042908748"},
+  {inn:"0548002149", name:"ООО КБ «МВС Банк»", bic:"048209775"},
+  {inn:"2332006024", name:"ООО КБ «РостФинанс»", bic:"046015052"},
+  {inn:"7703004072", name:"ООО КБ «СИНКО-БАНК»", bic:"044525346"},
+  {inn:"7718103767", name:"ООО КБ «Столичный Кредит»", bic:"044525683"},
+  {inn:"6654001613", name:"ООО КБ «Уралфинанс»", bic:"046577993"},
+  {inn:"7711068778", name:"ООО КБ «ЭКО-ИНВЕСТ»", bic:"044525440"},
+  {inn:"1653018661", name:"ООО КБЭР «Банк Казани»", bic:"049205844"},
+  {inn:"1650002455", name:"ПАО «АКИБАНК»", bic:"049205933"},
+  {inn:"7831001415", name:"ПАО «БАЛТИНВЕСТБАНК»", bic:"044030705"},
+  {inn:"7831000027", name:"ПАО «Банк »Санкт-Петербург«", bic:"044030790", aliases:["санкт-петербург","бспб"]},
+  {inn:"2634028786", name:"ПАО «Банк Ставр»", bic:"040702760"},
+  {inn:"1831002591", name:"ПАО «БыстроБанк»", bic:"045773830"},
+  {inn:"6164102186", name:"ПАО «Донкомбанк»", bic:"046015804"},
+  {inn:"6608005109", name:"ПАО «Контур.Банк»", bic:"046577904"},
+  {inn:"6612010782", name:"ПАО «МЕТКОМБАНК»", bic:"046577881"},
+  {inn:"5200000222", name:"ПАО «НБД-Банк»", bic:"042202705"},
+  {inn:"5607002142", name:"ПАО «НИКО-БАНК»", bic:"045354814"},
+  {inn:"4346001485", name:"ПАО «Норвик Банк»", bic:"044525845"},
+  {inn:"7718011918", name:"ПАО «РосДорБанк»", bic:"044525666"},
+  {inn:"7453002182", name:"ПАО «ЧЕЛИНДБАНК»", bic:"047501711"},
+  {inn:"7421000200", name:"ПАО «ЧЕЛЯБИНВЕСТБАНК»", bic:"047501779"},
+  {inn:"7702021163", name:"ПАО АКБ «АВАНГАРД»", bic:"044525201", aliases:["авангард"]},
+  {inn:"7709138570", name:"ПАО АКБ «Металлинвестбанк»", bic:"044525176"},
+  {inn:"2536020789", name:"ПАО АКБ «Приморье»", bic:"040507795"},
+  {inn:"7831000080", name:"ПАО Банк «АЛЕКСАНДРОВСКИЙ»", bic:"044030755"},
+  {inn:"5836900162", name:"ПАО Банк «Кузнецкий»", bic:"042202710"},
+  {inn:"7729405872", name:"ПАО Банк ЗЕНИТ", bic:"044525272", aliases:["зенит"]},
+  {inn:"6017000271", name:"ПАО КБ «РусьРегионБанк»", bic:"044525412"},
+  {inn:"6166003409", name:"ПАО КБ «Сельмашбанк»", bic:"046015860"},
+  {inn:"6608008004", name:"ПАО КБ «УБРиР»", bic:"046577795"},
+  {inn:"6163011391", name:"ПАО КБ «Центр-инвест»", bic:"046015762"},
+  {inn:"5249013007", name:"ПАО Комбанк «Химик»", bic:"042202727"},
+  {inn:"2539013067", name:"ПАО СКБ Приморья «Примсоцбанк»", bic:"040507803"},
+  {inn:"5321029402", name:"ПАО УКБ «Новобанк»", bic:"044030951"},
+  {inn:"2465037737", name:"ПАО ФИНСТАР БАНК", bic:"044030757"},
+  {inn:"6227001779", name:"Прио-Внешторгбанк (ПАО)", bic:"044525708"},
+  {inn:"7835903703", name:"Санкт-Петербургский банк инвестиций (АО)", bic:"044030820"},
+  {inn:"7709129705", name:"ТКБ БАНК ПАО", bic:"044525388"},
+  {inn:"7750056670", name:"ЦМРБанк (ООО)", bic:"044525059"},
+  {inn:"7831000940", name:"ЭКСИ-Банк (АО)", bic:"044030889"},
+  {inn:"7708013592", name:"Эс-Би-Ай Банк ООО", bic:"044525265"},
+  {inn:"0106000547", name:"ЮГ-Инвестбанк (ПАО)", bic:"040349966"},
+];
+
+// Поиск банка: по названию, ИНН, БИК и коротким синонимам («сбер», «альфа»)
+function findBanks(query){
+  const q = String(query || "").trim().toLowerCase();
+  if(!q) return BANKS_RU.slice(0, 30);
+  return BANKS_RU.filter(b => {
+    const hay = [b.name, b.inn, b.bic, ...(b.aliases || [])].join(" ").toLowerCase();
+    return hay.includes(q);
+  }).slice(0, 30);
+}
+
+// оставлено для совместимости: подстановка названия по введенному вручную ИНН
+const bankDirectory = Object.fromEntries(BANKS_RU.map(b => [b.inn, b.name]));
+
+
+// «готово» теперь считается по-настоящему: все поля во всех строках заполнены
+function isDataFilled(sectionKey, itemId){
+  const st = state[sectionKey][itemId];
+  if(groupedConfig[itemId]) return gIsFilled(sectionKey, itemId);
+  const fields = fieldConfig[itemId];
+  if(!fields) return false; // форма для пункта не описана — считать заполненным нельзя
+  if(!st.rows || st.rows.length === 0) return false;
+  return st.rows.every(row => fields.every(f => (row[f.key] || "").toString().trim() !== ""));
+}
+
+// ---------- справочники для поисковых селекторов «валюта» и «страна» ----------
+const CURRENCIES = [
+  // частые — наверх списка
+  {code:"KZT", ru:"Тенге", aliases:["тенге"]},
+  {code:"RUB", ru:"Российский рубль", aliases:["рубль","рубли","российский рубль"]},
+  {code:"USD", ru:"Доллар США", aliases:["доллар","доллары США","бакс"]},
+  {code:"EUR", ru:"Евро", aliases:["евро"]},
+  // остальные — по коду, по официальному справочнику ИСНД
+  {code:"AED", ru:"Дирхам (ОАЭ)", aliases:["дирхам","ОАЭ"]},
+  {code:"AFN", ru:"Афгани"},
+  {code:"ALL", ru:"Лек"},
+  {code:"AMD", ru:"Армянский драм", aliases:["драм"]},
+  {code:"ANG", ru:"Нидерландский антильский гульден"},
+  {code:"AOA", ru:"Кванза"},
+  {code:"ARS", ru:"Аргентинское песо"},
+  {code:"AUD", ru:"Австралийский доллар"},
+  {code:"AWG", ru:"Арубанский флорин"},
+  {code:"AZN", ru:"Азербайджанский манат", aliases:["манат"]},
+  {code:"BAM", ru:"Конвертируемая марка"},
+  {code:"BBD", ru:"Барбадосский доллар"},
+  {code:"BDT", ru:"Така"},
+  {code:"BGN", ru:"Болгарский лев"},
+  {code:"BHD", ru:"Бахрейнский динар"},
+  {code:"BIF", ru:"Бурундийский франк"},
+  {code:"BMD", ru:"Бермудский доллар"},
+  {code:"BND", ru:"Брунейский доллар"},
+  {code:"BOB", ru:"Боливиано"},
+  {code:"BRL", ru:"Бразильский реал"},
+  {code:"BSD", ru:"Багамский доллар"},
+  {code:"BTN", ru:"Нгултрум"},
+  {code:"BWP", ru:"Пула"},
+  {code:"BYN", ru:"Белорусский рубль", aliases:["белорусский рубль","бел. рубль"]},
+  {code:"BZD", ru:"Белизский доллар"},
+  {code:"CAD", ru:"Канадский доллар"},
+  {code:"CDF", ru:"Конголезский франк"},
+  {code:"CHF", ru:"Швейцарский франк", aliases:["франк","швейцарский франк"]},
+  {code:"CLP", ru:"Чилийское песо"},
+  {code:"CNY", ru:"Юань", aliases:["юань","юани"]},
+  {code:"COP", ru:"Колумбийское песо"},
+  {code:"COU", ru:"Единица реальной стоимости"},
+  {code:"CRC", ru:"Костариканский колон"},
+  {code:"CUC", ru:"Конвертируемое песо"},
+  {code:"CUP", ru:"Кубинское песо"},
+  {code:"CVE", ru:"Эскудо Кабо-Верде"},
+  {code:"CZK", ru:"Чешская крона"},
+  {code:"DJF", ru:"Франк Джибути"},
+  {code:"DKK", ru:"Датская крона"},
+  {code:"DOP", ru:"Доминиканское песо"},
+  {code:"DZD", ru:"Алжирский динар"},
+  {code:"EGP", ru:"Египетский фунт"},
+  {code:"ERN", ru:"Накфа"},
+  {code:"ETB", ru:"Эфиопский быр"},
+  {code:"FJD", ru:"Доллар Фиджи"},
+  {code:"FKP", ru:"Фунт Фолклендских островов"},
+  {code:"GBP", ru:"Фунт стерлингов", aliases:["фунт","фунты стерлингов"]},
+  {code:"GEL", ru:"Лари", aliases:["лари"]},
+  {code:"GHS", ru:"Ганский седи"},
+  {code:"GIP", ru:"Гибралтарский фунт"},
+  {code:"GMD", ru:"Даласи"},
+  {code:"GNF", ru:"Гвинейский франк"},
+  {code:"GTQ", ru:"Кетсаль"},
+  {code:"GYD", ru:"Гайанский доллар"},
+  {code:"HKD", ru:"Гонконгский доллар"},
+  {code:"HNL", ru:"Лемпира"},
+  {code:"HRK", ru:"Куна"},
+  {code:"HTG", ru:"Гурд"},
+  {code:"HUF", ru:"Форинт"},
+  {code:"IDR", ru:"Рупия"},
+  {code:"ILS", ru:"Новый израильский шекель"},
+  {code:"INR", ru:"Индийская рупия"},
+  {code:"IQD", ru:"Иракский динар"},
+  {code:"IRR", ru:"Иранский риал"},
+  {code:"ISK", ru:"Исландская крона"},
+  {code:"JMD", ru:"Ямайский доллар"},
+  {code:"JOD", ru:"Иорданский динар"},
+  {code:"JPY", ru:"Иена", aliases:["иена","йена"]},
+  {code:"KES", ru:"Кенийский шиллинг"},
+  {code:"KGS", ru:"Сом", aliases:["сом"]},
+  {code:"KHR", ru:"Риель"},
+  {code:"KMF", ru:"Коморский франк"},
+  {code:"KPW", ru:"Северокорейская вона"},
+  {code:"KRW", ru:"Вона"},
+  {code:"KWD", ru:"Кувейтский динар"},
+  {code:"KYD", ru:"Доллар Островов Кайман"},
+  {code:"LAK", ru:"Лаосский кип"},
+  {code:"LBP", ru:"Ливанский фунт"},
+  {code:"LKR", ru:"Шри-Ланкийская рупия"},
+  {code:"LRD", ru:"Либерийский доллар"},
+  {code:"LSL", ru:"Лоти"},
+  {code:"LTL", ru:"Литовский лит"},
+  {code:"LVL", ru:"Латвийский лат"},
+  {code:"LYD", ru:"Ливийский динар"},
+  {code:"MAD", ru:"Марокканский дирхам"},
+  {code:"MDL", ru:"Молдавский лей"},
+  {code:"MGA", ru:"Малагасийский ариари"},
+  {code:"MKD", ru:"Денар"},
+  {code:"MMK", ru:"Кьят"},
+  {code:"MNT", ru:"Тугрик"},
+  {code:"MOP", ru:"Патака"},
+  {code:"MRU", ru:"Угия"},
+  {code:"MUR", ru:"Маврикийская рупия"},
+  {code:"MVR", ru:"Руфия"},
+  {code:"MWK", ru:"Малавийская квача"},
+  {code:"MXN", ru:"Мексиканское песо"},
+  {code:"MYR", ru:"Малайзийский ринггит"},
+  {code:"MZN", ru:"Мозамбикский метикал"},
+  {code:"NAD", ru:"Доллар Намибии"},
+  {code:"NGN", ru:"Найра"},
+  {code:"NIO", ru:"Золотая кордоба"},
+  {code:"NOK", ru:"Норвежская крона"},
+  {code:"NPR", ru:"Непальская рупия"},
+  {code:"NZD", ru:"Новозеландский доллар"},
+  {code:"OMR", ru:"Оманский риал"},
+  {code:"PAB", ru:"Бальбоа"},
+  {code:"PEN", ru:"Соль"},
+  {code:"PGK", ru:"Кина"},
+  {code:"PHP", ru:"Филиппинское песо"},
+  {code:"PKR", ru:"Пакистанская рупия"},
+  {code:"PLN", ru:"Злотый"},
+  {code:"PYG", ru:"Гуарани"},
+  {code:"QAR", ru:"Катарский риал"},
+  {code:"RON", ru:"Румынский лей"},
+  {code:"RSD", ru:"Сербский динар"},
+  {code:"RWF", ru:"Франк Руанды"},
+  {code:"SAR", ru:"Саудовский риял"},
+  {code:"SBD", ru:"Доллар Соломоновых Островов"},
+  {code:"SCR", ru:"Сейшельская рупия"},
+  {code:"SDG", ru:"Суданский фунт"},
+  {code:"SEK", ru:"Шведская крона"},
+  {code:"SGD", ru:"Сингапурский доллар"},
+  {code:"SHP", ru:"Фунт Святой Елены"},
+  {code:"SLL", ru:"Леоне"},
+  {code:"SOS", ru:"Сомалийский шиллинг"},
+  {code:"SRD", ru:"Суринамский доллар"},
+  {code:"SSP", ru:"Южносуданский фунт"},
+  {code:"STN", ru:"Добра"},
+  {code:"SVC", ru:"Сальвадорский колон"},
+  {code:"SYP", ru:"Сирийский фунт"},
+  {code:"SZL", ru:"Лилангени"},
+  {code:"THB", ru:"Бат"},
+  {code:"TJS", ru:"Сомони"},
+  {code:"TMT", ru:"Новый туркменский манат"},
+  {code:"TND", ru:"Тунисский динар"},
+  {code:"TOP", ru:"Паанга"},
+  {code:"TRY", ru:"Турецкая лира", aliases:["лира","турецкая лира"]},
+  {code:"TTD", ru:"Доллар Тринидада и Тобаго"},
+  {code:"TWD", ru:"Новый тайваньский доллар"},
+  {code:"TZS", ru:"Танзанийский шиллинг"},
+  {code:"UAH", ru:"Гривна", aliases:["гривна"]},
+  {code:"UGX", ru:"Угандийский шиллинг"},
+  {code:"UYI", ru:"Уругвайское песо в индексированных единицах"},
+  {code:"UYU", ru:"Уругвайское песо"},
+  {code:"UZS", ru:"Узбекский сум", aliases:["сум"]},
+  {code:"VEF", ru:"Боливар"},
+  {code:"VES", ru:"Боливар Соберано"},
+  {code:"VND", ru:"Донг"},
+  {code:"VUV", ru:"Вату"},
+  {code:"WST", ru:"Тала"},
+  {code:"XAF", ru:"Франк КФА ВЕАС*"},
+  {code:"XCD", ru:"Восточно-карибский доллар"},
+  {code:"XDR", ru:"СДР (специальные права заимствования)"},
+  {code:"XOF", ru:"Франк КФА ВСЕАО**"},
+  {code:"XPF", ru:"Франк КФП"},
+  {code:"YER", ru:"Йеменский риал"},
+  {code:"ZAR", ru:"Рэнд"},
+  {code:"ZMW", ru:"Замбийская квача"},
+  {code:"ZWL", ru:"Доллар Зимбабве"},
+];
+const COUNTRIES = [
+  // популярные — вверху списка
+  {code:"RU", ru:"Россия", flag:"🇷🇺", aliases:["РФ","Российская Федерация","Россия"]},
+  {code:"BY", ru:"Беларусь", flag:"🇧🇾", aliases:["Белоруссия","Республика Беларусь"]},
+  {code:"GE", ru:"Грузия", flag:"🇬🇪", aliases:["Грузия"]},
+  // остальные — по алфавиту
+  {code:"AU", ru:"Австралия", flag:"🇦🇺"},
+  {code:"AT", ru:"Австрия", flag:"🇦🇹"},
+  {code:"AZ", ru:"Азербайджан", flag:"🇦🇿", aliases:["Азербайджан"]},
+  {code:"AX", ru:"Аландские о-ва", flag:"🇦🇽"},
+  {code:"AL", ru:"Албания", flag:"🇦🇱"},
+  {code:"DZ", ru:"Алжир", flag:"🇩🇿"},
+  {code:"AS", ru:"Американское Самоа", flag:"🇦🇸"},
+  {code:"AI", ru:"Ангилья", flag:"🇦🇮"},
+  {code:"AO", ru:"Ангола", flag:"🇦🇴"},
+  {code:"AD", ru:"Андорра", flag:"🇦🇩"},
+  {code:"AQ", ru:"Антарктида", flag:"🇦🇶"},
+  {code:"AG", ru:"Антигуа и Барбуда", flag:"🇦🇬"},
+  {code:"AR", ru:"Аргентина", flag:"🇦🇷"},
+  {code:"AM", ru:"Армения", flag:"🇦🇲", aliases:["Армения"]},
+  {code:"AW", ru:"Аруба", flag:"🇦🇼"},
+  {code:"AF", ru:"Афганистан", flag:"🇦🇫"},
+  {code:"BS", ru:"Багамы", flag:"🇧🇸"},
+  {code:"BD", ru:"Бангладеш", flag:"🇧🇩"},
+  {code:"BB", ru:"Барбадос", flag:"🇧🇧"},
+  {code:"BH", ru:"Бахрейн", flag:"🇧🇭"},
+  {code:"BZ", ru:"Белиз", flag:"🇧🇿"},
+  {code:"BE", ru:"Бельгия", flag:"🇧🇪"},
+  {code:"BJ", ru:"Бенин", flag:"🇧🇯"},
+  {code:"BM", ru:"Бермудские о-ва", flag:"🇧🇲"},
+  {code:"BG", ru:"Болгария", flag:"🇧🇬"},
+  {code:"BO", ru:"Боливия", flag:"🇧🇴"},
+  {code:"BQ", ru:"Бонэйр, Синт-Эстатиус и Саба", flag:"🇧🇶"},
+  {code:"BA", ru:"Босния и Герцеговина", flag:"🇧🇦"},
+  {code:"BW", ru:"Ботсвана", flag:"🇧🇼"},
+  {code:"BR", ru:"Бразилия", flag:"🇧🇷"},
+  {code:"IO", ru:"Британская территория в Индийском океане", flag:"🇮🇴"},
+  {code:"BN", ru:"Бруней", flag:"🇧🇳"},
+  {code:"BF", ru:"Буркина-Фасо", flag:"🇧🇫"},
+  {code:"BI", ru:"Бурунди", flag:"🇧🇮"},
+  {code:"BT", ru:"Бутан", flag:"🇧🇹"},
+  {code:"VU", ru:"Вануату", flag:"🇻🇺"},
+  {code:"VA", ru:"Ватикан", flag:"🇻🇦"},
+  {code:"GB", ru:"Великобритания", flag:"🇬🇧", aliases:["Великобритания","Соединенное Королевство","Англия","UK"]},
+  {code:"HU", ru:"Венгрия", flag:"🇭🇺"},
+  {code:"VE", ru:"Венесуэла", flag:"🇻🇪"},
+  {code:"VG", ru:"Виргинские о-ва (Великобритания)", flag:"🇻🇬", aliases:["Британские Виргинские острова","БВО"]},
+  {code:"VI", ru:"Виргинские о-ва (США)", flag:"🇻🇮"},
+  {code:"UM", ru:"Внешние малые о-ва (США)", flag:"🇺🇲"},
+  {code:"TL", ru:"Восточный Тимор", flag:"🇹🇱"},
+  {code:"VN", ru:"Вьетнам", flag:"🇻🇳"},
+  {code:"GA", ru:"Габон", flag:"🇬🇦"},
+  {code:"HT", ru:"Гаити", flag:"🇭🇹"},
+  {code:"GY", ru:"Гайана", flag:"🇬🇾"},
+  {code:"GM", ru:"Гамбия", flag:"🇬🇲"},
+  {code:"GH", ru:"Гана", flag:"🇬🇭"},
+  {code:"GP", ru:"Гваделупа", flag:"🇬🇵"},
+  {code:"GT", ru:"Гватемала", flag:"🇬🇹"},
+  {code:"GN", ru:"Гвинея", flag:"🇬🇳"},
+  {code:"GW", ru:"Гвинея-Бисау", flag:"🇬🇼"},
+  {code:"DE", ru:"Германия", flag:"🇩🇪"},
+  {code:"GG", ru:"Гернси", flag:"🇬🇬"},
+  {code:"GI", ru:"Гибралтар", flag:"🇬🇮"},
+  {code:"HN", ru:"Гондурас", flag:"🇭🇳"},
+  {code:"HK", ru:"Гонконг (САР)", flag:"🇭🇰", aliases:["Гонконг"]},
+  {code:"GD", ru:"Гренада", flag:"🇬🇩"},
+  {code:"GL", ru:"Гренландия", flag:"🇬🇱"},
+  {code:"GR", ru:"Греция", flag:"🇬🇷"},
+  {code:"GU", ru:"Гуам", flag:"🇬🇺"},
+  {code:"DK", ru:"Дания", flag:"🇩🇰"},
+  {code:"JE", ru:"Джерси", flag:"🇯🇪"},
+  {code:"DJ", ru:"Джибути", flag:"🇩🇯"},
+  {code:"DM", ru:"Доминика", flag:"🇩🇲"},
+  {code:"DO", ru:"Доминиканская Республика", flag:"🇩🇴"},
+  {code:"EG", ru:"Египет", flag:"🇪🇬"},
+  {code:"ZM", ru:"Замбия", flag:"🇿🇲"},
+  {code:"EH", ru:"Западная Сахара", flag:"🇪🇭"},
+  {code:"ZW", ru:"Зимбабве", flag:"🇿🇼"},
+  {code:"IL", ru:"Израиль", flag:"🇮🇱"},
+  {code:"IN", ru:"Индия", flag:"🇮🇳"},
+  {code:"ID", ru:"Индонезия", flag:"🇮🇩"},
+  {code:"JO", ru:"Иордания", flag:"🇯🇴"},
+  {code:"IQ", ru:"Ирак", flag:"🇮🇶"},
+  {code:"IR", ru:"Иран", flag:"🇮🇷"},
+  {code:"IE", ru:"Ирландия", flag:"🇮🇪"},
+  {code:"IS", ru:"Исландия", flag:"🇮🇸"},
+  {code:"ES", ru:"Испания", flag:"🇪🇸"},
+  {code:"IT", ru:"Италия", flag:"🇮🇹"},
+  {code:"YE", ru:"Йемен", flag:"🇾🇪"},
+  {code:"CV", ru:"Кабо-Верде", flag:"🇨🇻"},
+  {code:"KZ", ru:"Казахстан", flag:"🇰🇿", aliases:["РК","Республика Казахстан"]},
+  {code:"KH", ru:"Камбоджа", flag:"🇰🇭"},
+  {code:"CM", ru:"Камерун", flag:"🇨🇲"},
+  {code:"CA", ru:"Канада", flag:"🇨🇦"},
+  {code:"QA", ru:"Катар", flag:"🇶🇦"},
+  {code:"KE", ru:"Кения", flag:"🇰🇪"},
+  {code:"CY", ru:"Кипр", flag:"🇨🇾"},
+  {code:"KG", ru:"Киргизия", flag:"🇰🇬", aliases:["Киргизия","Кыргызстан"]},
+  {code:"KI", ru:"Кирибати", flag:"🇰🇮"},
+  {code:"CN", ru:"Китай", flag:"🇨🇳", aliases:["Китай","КНР"]},
+  {code:"KP", ru:"КНДР", flag:"🇰🇵", aliases:["Северная Корея"]},
+  {code:"CC", ru:"Кокосовые о-ва", flag:"🇨🇨"},
+  {code:"CO", ru:"Колумбия", flag:"🇨🇴"},
+  {code:"KM", ru:"Коморы", flag:"🇰🇲"},
+  {code:"CG", ru:"Конго - Браззавиль", flag:"🇨🇬"},
+  {code:"CD", ru:"Конго - Киншаса", flag:"🇨🇩"},
+  {code:"CR", ru:"Коста-Рика", flag:"🇨🇷"},
+  {code:"CI", ru:"Кот-д’Ивуар", flag:"🇨🇮"},
+  {code:"CU", ru:"Куба", flag:"🇨🇺"},
+  {code:"KW", ru:"Кувейт", flag:"🇰🇼"},
+  {code:"CW", ru:"Кюрасао", flag:"🇨🇼"},
+  {code:"LA", ru:"Лаос", flag:"🇱🇦"},
+  {code:"LV", ru:"Латвия", flag:"🇱🇻"},
+  {code:"LS", ru:"Лесото", flag:"🇱🇸"},
+  {code:"LR", ru:"Либерия", flag:"🇱🇷"},
+  {code:"LB", ru:"Ливан", flag:"🇱🇧"},
+  {code:"LY", ru:"Ливия", flag:"🇱🇾"},
+  {code:"LT", ru:"Литва", flag:"🇱🇹"},
+  {code:"LI", ru:"Лихтенштейн", flag:"🇱🇮"},
+  {code:"LU", ru:"Люксембург", flag:"🇱🇺"},
+  {code:"MU", ru:"Маврикий", flag:"🇲🇺"},
+  {code:"MR", ru:"Мавритания", flag:"🇲🇷"},
+  {code:"MG", ru:"Мадагаскар", flag:"🇲🇬"},
+  {code:"YT", ru:"Майотта", flag:"🇾🇹"},
+  {code:"MO", ru:"Макао (САР)", flag:"🇲🇴"},
+  {code:"MW", ru:"Малави", flag:"🇲🇼"},
+  {code:"MY", ru:"Малайзия", flag:"🇲🇾"},
+  {code:"ML", ru:"Мали", flag:"🇲🇱"},
+  {code:"MV", ru:"Мальдивы", flag:"🇲🇻"},
+  {code:"MT", ru:"Мальта", flag:"🇲🇹"},
+  {code:"MA", ru:"Марокко", flag:"🇲🇦"},
+  {code:"MQ", ru:"Мартиника", flag:"🇲🇶"},
+  {code:"MH", ru:"Маршалловы о-ва", flag:"🇲🇭"},
+  {code:"MX", ru:"Мексика", flag:"🇲🇽"},
+  {code:"MZ", ru:"Мозамбик", flag:"🇲🇿"},
+  {code:"MD", ru:"Молдова", flag:"🇲🇩", aliases:["Молдавия"]},
+  {code:"MC", ru:"Монако", flag:"🇲🇨"},
+  {code:"MN", ru:"Монголия", flag:"🇲🇳"},
+  {code:"MS", ru:"Монтсеррат", flag:"🇲🇸"},
+  {code:"MM", ru:"Мьянма (Бирма)", flag:"🇲🇲"},
+  {code:"NA", ru:"Намибия", flag:"🇳🇦"},
+  {code:"NR", ru:"Науру", flag:"🇳🇷"},
+  {code:"NP", ru:"Непал", flag:"🇳🇵"},
+  {code:"NE", ru:"Нигер", flag:"🇳🇪"},
+  {code:"NG", ru:"Нигерия", flag:"🇳🇬"},
+  {code:"NL", ru:"Нидерланды", flag:"🇳🇱", aliases:["Голландия","Нидерланды"]},
+  {code:"NI", ru:"Никарагуа", flag:"🇳🇮"},
+  {code:"NU", ru:"Ниуэ", flag:"🇳🇺"},
+  {code:"NZ", ru:"Новая Зеландия", flag:"🇳🇿"},
+  {code:"NC", ru:"Новая Каледония", flag:"🇳🇨"},
+  {code:"NO", ru:"Норвегия", flag:"🇳🇴"},
+  {code:"BV", ru:"о-в Буве", flag:"🇧🇻"},
+  {code:"IM", ru:"о-в Мэн", flag:"🇮🇲"},
+  {code:"NF", ru:"о-в Норфолк", flag:"🇳🇫"},
+  {code:"CX", ru:"о-в Рождества", flag:"🇨🇽"},
+  {code:"SH", ru:"о-в Св. Елены", flag:"🇸🇭"},
+  {code:"KY", ru:"о-ва Кайман", flag:"🇰🇾", aliases:["Каймановы острова","Кайманы"]},
+  {code:"CK", ru:"о-ва Кука", flag:"🇨🇰"},
+  {code:"PN", ru:"о-ва Питкэрн", flag:"🇵🇳"},
+  {code:"HM", ru:"о-ва Херд и Макдональд", flag:"🇭🇲"},
+  {code:"AE", ru:"ОАЭ", flag:"🇦🇪", aliases:["ОАЭ","Объединенные Арабские Эмираты","Объединенные Арабские Эмираты","Эмираты"]},
+  {code:"OM", ru:"Оман", flag:"🇴🇲"},
+  {code:"PK", ru:"Пакистан", flag:"🇵🇰"},
+  {code:"PW", ru:"Палау", flag:"🇵🇼"},
+  {code:"PS", ru:"Палестинские территории", flag:"🇵🇸"},
+  {code:"PA", ru:"Панама", flag:"🇵🇦"},
+  {code:"PG", ru:"Папуа — Новая Гвинея", flag:"🇵🇬"},
+  {code:"PY", ru:"Парагвай", flag:"🇵🇾"},
+  {code:"PE", ru:"Перу", flag:"🇵🇪"},
+  {code:"PL", ru:"Польша", flag:"🇵🇱"},
+  {code:"PT", ru:"Португалия", flag:"🇵🇹"},
+  {code:"PR", ru:"Пуэрто-Рико", flag:"🇵🇷"},
+  {code:"KR", ru:"Республика Корея", flag:"🇰🇷", aliases:["Южная Корея","Республика Корея"]},
+  {code:"RE", ru:"Реюньон", flag:"🇷🇪"},
+  {code:"RW", ru:"Руанда", flag:"🇷🇼"},
+  {code:"RO", ru:"Румыния", flag:"🇷🇴"},
+  {code:"SV", ru:"Сальвадор", flag:"🇸🇻"},
+  {code:"WS", ru:"Самоа", flag:"🇼🇸"},
+  {code:"SM", ru:"Сан-Марино", flag:"🇸🇲"},
+  {code:"ST", ru:"Сан-Томе и Принсипи", flag:"🇸🇹"},
+  {code:"SA", ru:"Саудовская Аравия", flag:"🇸🇦"},
+  {code:"MK", ru:"Северная Македония", flag:"🇲🇰"},
+  {code:"MP", ru:"Северные Марианские о-ва", flag:"🇲🇵"},
+  {code:"SC", ru:"Сейшельские о-ва", flag:"🇸🇨"},
+  {code:"BL", ru:"Сен-Бартелеми", flag:"🇧🇱"},
+  {code:"MF", ru:"Сен-Мартен", flag:"🇲🇫"},
+  {code:"PM", ru:"Сен-Пьер и Микелон", flag:"🇵🇲"},
+  {code:"SN", ru:"Сенегал", flag:"🇸🇳"},
+  {code:"VC", ru:"Сент-Винсент и Гренадины", flag:"🇻🇨"},
+  {code:"KN", ru:"Сент-Китс и Невис", flag:"🇰🇳"},
+  {code:"LC", ru:"Сент-Люсия", flag:"🇱🇨"},
+  {code:"RS", ru:"Сербия", flag:"🇷🇸"},
+  {code:"SG", ru:"Сингапур", flag:"🇸🇬"},
+  {code:"SX", ru:"Синт-Мартен", flag:"🇸🇽"},
+  {code:"SY", ru:"Сирия", flag:"🇸🇾"},
+  {code:"SK", ru:"Словакия", flag:"🇸🇰"},
+  {code:"SI", ru:"Словения", flag:"🇸🇮"},
+  {code:"US", ru:"Соединенные Штаты", flag:"🇺🇸", aliases:["США","Соединенные Штаты","Соединенные Штаты Америки","Америка"]},
+  {code:"SB", ru:"Соломоновы о-ва", flag:"🇸🇧"},
+  {code:"SO", ru:"Сомали", flag:"🇸🇴"},
+  {code:"SD", ru:"Судан", flag:"🇸🇩"},
+  {code:"SR", ru:"Суринам", flag:"🇸🇷"},
+  {code:"SL", ru:"Сьерра-Леоне", flag:"🇸🇱"},
+  {code:"TJ", ru:"Таджикистан", flag:"🇹🇯"},
+  {code:"TH", ru:"Таиланд", flag:"🇹🇭"},
+  {code:"TW", ru:"Тайвань", flag:"🇹🇼"},
+  {code:"TZ", ru:"Танзания", flag:"🇹🇿"},
+  {code:"TG", ru:"Того", flag:"🇹🇬"},
+  {code:"TK", ru:"Токелау", flag:"🇹🇰"},
+  {code:"TO", ru:"Тонга", flag:"🇹🇴"},
+  {code:"TT", ru:"Тринидад и Тобаго", flag:"🇹🇹"},
+  {code:"TV", ru:"Тувалу", flag:"🇹🇻"},
+  {code:"TN", ru:"Тунис", flag:"🇹🇳"},
+  {code:"TM", ru:"Туркменистан", flag:"🇹🇲"},
+  {code:"TR", ru:"Турция", flag:"🇹🇷", aliases:["Турция"]},
+  {code:"TC", ru:"Теркс и Кайкос", flag:"🇹🇨"},
+  {code:"UG", ru:"Уганда", flag:"🇺🇬"},
+  {code:"UZ", ru:"Узбекистан", flag:"🇺🇿"},
+  {code:"UA", ru:"Украина", flag:"🇺🇦"},
+  {code:"WF", ru:"Уоллис и Футуна", flag:"🇼🇫"},
+  {code:"UY", ru:"Уругвай", flag:"🇺🇾"},
+  {code:"FO", ru:"Фарерские о-ва", flag:"🇫🇴"},
+  {code:"FM", ru:"Федеративные Штаты Микронезии", flag:"🇫🇲"},
+  {code:"FJ", ru:"Фиджи", flag:"🇫🇯"},
+  {code:"PH", ru:"Филиппины", flag:"🇵🇭"},
+  {code:"FI", ru:"Финляндия", flag:"🇫🇮"},
+  {code:"FK", ru:"Фолклендские о-ва", flag:"🇫🇰"},
+  {code:"FR", ru:"Франция", flag:"🇫🇷"},
+  {code:"GF", ru:"Французская Гвиана", flag:"🇬🇫"},
+  {code:"PF", ru:"Французская Полинезия", flag:"🇵🇫"},
+  {code:"TF", ru:"Французские Южные территории", flag:"🇹🇫"},
+  {code:"HR", ru:"Хорватия", flag:"🇭🇷"},
+  {code:"CF", ru:"Центрально-Африканская Республика", flag:"🇨🇫"},
+  {code:"TD", ru:"Чад", flag:"🇹🇩"},
+  {code:"ME", ru:"Черногория", flag:"🇲🇪"},
+  {code:"CZ", ru:"Чехия", flag:"🇨🇿", aliases:["Чехия","Чешская Республика"]},
+  {code:"CL", ru:"Чили", flag:"🇨🇱"},
+  {code:"CH", ru:"Швейцария", flag:"🇨🇭", aliases:["Швейцария"]},
+  {code:"SE", ru:"Швеция", flag:"🇸🇪"},
+  {code:"SJ", ru:"Шпицберген и Ян-Майен", flag:"🇸🇯"},
+  {code:"LK", ru:"Шри-Ланка", flag:"🇱🇰"},
+  {code:"EC", ru:"Эквадор", flag:"🇪🇨"},
+  {code:"GQ", ru:"Экваториальная Гвинея", flag:"🇬🇶"},
+  {code:"ER", ru:"Эритрея", flag:"🇪🇷"},
+  {code:"SZ", ru:"Эсватини", flag:"🇸🇿"},
+  {code:"EE", ru:"Эстония", flag:"🇪🇪"},
+  {code:"ET", ru:"Эфиопия", flag:"🇪🇹"},
+  {code:"GS", ru:"Южная Георгия и Южные Сандвичевы о-ва", flag:"🇬🇸"},
+  {code:"ZA", ru:"Южно-Африканская Республика", flag:"🇿🇦"},
+  {code:"SS", ru:"Южный Судан", flag:"🇸🇸"},
+  {code:"JM", ru:"Ямайка", flag:"🇯🇲"},
+  {code:"JP", ru:"Япония", flag:"🇯🇵"},
+];
+
+// Для «иностранных» разделов Казахстан не предлагаем — там учитываются только зарубежные активы
+const FOREIGN_COUNTRIES = COUNTRIES.filter(c => c.code !== "KZ");
+
+// Флаги: для частых стран — встроенные SVG (грузятся мгновенно, не зависят от сети),
+// для остальных — легкая картинка с CDN, а если она не загрузилась, показываем код страны.
+const SVG_NS = "http://www.w3.org/2000/svg";
+// Простые флаги частых стран — рисуем сами, без сети. Кодирование делаем в flagImg.
+const INLINE_FLAGS = {
+  RU: "<rect width='9' height='2' fill='#fff'/><rect y='2' width='9' height='2' fill='#0039A6'/><rect y='4' width='9' height='2' fill='#D52B1E'/>",
+  BY: "<rect width='9' height='4' fill='#C8313E'/><rect y='4' width='9' height='2' fill='#4AA657'/>",
+  GE: "<rect width='9' height='6' fill='#fff'/><rect x='3.6' width='1.8' height='6' fill='#F00'/><rect y='2.1' width='9' height='1.8' fill='#F00'/>",
+  KZ: "<rect width='9' height='6' fill='#00AFCA'/><circle cx='4.5' cy='3' r='1.2' fill='#FEC50C'/>",
+  US: "<rect width='9' height='6' fill='#fff'/><g fill='#B22234'><rect width='9' height='.46'/><rect y='.92' width='9' height='.46'/><rect y='1.85' width='9' height='.46'/><rect y='2.77' width='9' height='.46'/><rect y='3.69' width='9' height='.46'/><rect y='4.62' width='9' height='.46'/><rect y='5.54' width='9' height='.46'/></g><rect width='3.6' height='3.23' fill='#3C3B6E'/>",
+  TR: "<rect width='9' height='6' fill='#E30A17'/><circle cx='3.4' cy='3' r='1.3' fill='#fff'/><circle cx='3.8' cy='3' r='1.05' fill='#E30A17'/>",
+  AM: "<rect width='9' height='2' fill='#D90012'/><rect y='2' width='9' height='2' fill='#0033A0'/><rect y='4' width='9' height='2' fill='#F2A800'/>",
+  DE: "<rect width='9' height='2' fill='#000'/><rect y='2' width='9' height='2' fill='#DD0000'/><rect y='4' width='9' height='2' fill='#FFCE00'/>",
+  AE: "<rect width='9' height='2' fill='#00732F'/><rect y='2' width='9' height='2' fill='#fff'/><rect y='4' width='9' height='2' fill='#000'/><rect width='2.2' height='6' fill='#F00'/>",
+  CN: "<rect width='9' height='6' fill='#DE2910'/><circle cx='1.8' cy='1.7' r='.9' fill='#FFDE00'/>",
+  GB: "<rect width='9' height='6' fill='#012169'/><path d='M0,0 9,6 M9,0 0,6' stroke='#fff' stroke-width='1.2'/><path d='M4.5,0 V6 M0,3 H9' stroke='#fff' stroke-width='2'/><path d='M4.5,0 V6 M0,3 H9' stroke='#C8102E' stroke-width='1.2'/>",
+};
+
+function flagImg(code){
+  const cc = code.toUpperCase();
+  const body = INLINE_FLAGS[cc];
+  if(body){
+    // xmlns обязателен, иначе браузер не отрисует SVG внутри <img>
+    const svg = `<svg xmlns="${SVG_NS}" viewBox="0 0 9 6" width="20" height="13">${body}</svg>`;
+    return `<img class="flag-img" src="data:image/svg+xml,${encodeURIComponent(svg)}" width="20" alt="">`;
+  }
+  // если картинка не загрузилась — подменяем ее кодом страны (см. flagFallback)
+  return `<img class="flag-img" src="https://flagcdn.com/w20/${code.toLowerCase()}.png" width="20" alt=""
+    loading="lazy" decoding="async" data-cc="${cc}" onerror="flagFallback(this)">`;
+}
+
+function flagFallback(img){
+  const span = document.createElement("span");
+  span.className = "flag-fallback";
+  span.textContent = img.dataset.cc || "";
+  img.replaceWith(span);
+}
+
+function formatOption(list, code){
+  const found = list.find(o=>o.code === code);
+  if(!found) return code;
+  return found.flag ? `${found.flag} ${found.ru}` : `${found.code} — ${found.ru}`;
+}
+function filterOptions(list, query){
+  const q = query.trim().toLowerCase();
+  if(!q) return list;
+  return list.filter(o=>{
+    const hay = [o.code, o.ru, ...(o.aliases||[])].join(" ").toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+// обобщенный поисковый селектор (валюта/страна) — принимает колбэки чтения/записи значения,
+// поэтому подходит и для плоской таблицы, и для вложенной структуры «страна → банк → счета»
+const comboHandlers = {};
+function optionsList(optionsType){
+  if(optionsType === "currency") return CURRENCIES;
+  if(optionsType === "country-foreign") return FOREIGN_COUNTRIES;
+  return COUNTRIES;
+}
+function genericComboHTML(comboId, optionsType, currentCode, placeholder, onSelect, getValue){
+  comboHandlers[comboId] = {onSelect, getValue, optionsType};
+  const list = optionsList(optionsType);
+  const found = list.find(o=>o.code === currentCode);
+  const label = found ? found.ru : (currentCode || "");
+  const hasFlag = !!(found && found.flag);
+  return `
+    <div class="combo-wrap">
+      <span class="combo-flag-slot" id="${comboId}-flag">${hasFlag ? flagImg(found.code) : ""}</span>
+      <input id="${comboId}-input" class="form-cell combo-input ${hasFlag ? "has-flag" : ""}" type="text" autocomplete="off"
+        placeholder="${placeholder}" value="${label}"
+        oninput="genericComboSearch('${comboId}',this.value)"
+        onfocus="genericComboSearch('${comboId}',this.value)"
+        onblur="genericComboBlur('${comboId}')">
+      <div id="${comboId}-list" class="combo-list"></div>
+    </div>
+  `;
+}
+function genericComboSearch(comboId, query){
+  const h = comboHandlers[comboId];
+  if(!h) return;
+  const list = optionsList(h.optionsType);
+  const filtered = filterOptions(list, query);
+  const listEl = document.getElementById(`${comboId}-list`);
+  if(!listEl) return;
+  listEl.innerHTML = filtered.length
+    ? filtered.map(o=>`
+        <div class="combo-item" onmousedown="event.preventDefault();genericComboSelect('${comboId}','${o.code}')">
+${o.flag ? flagImg(o.code) : ""}<span class="combo-item-name">${o.ru}</span><span class="combo-item-code">${o.code}</span>
+        </div>
+      `).join("")
+    : `<div class="combo-empty">Ничего не найдено</div>`;
+  const input = document.getElementById(`${comboId}-input`);
+  if(input){
+    const r = input.getBoundingClientRect();
+    listEl.style.left = `${r.left}px`;
+    listEl.style.width = `${Math.max(r.width, 240)}px`;
+    // если снизу мало места — открываем список вверх
+    const below = window.innerHeight - r.bottom;
+    if(below < 240 && r.top > below){
+      listEl.style.top = "auto";
+      listEl.style.bottom = `${window.innerHeight - r.top + 4}px`;
+    } else {
+      listEl.style.bottom = "auto";
+      listEl.style.top = `${r.bottom + 4}px`;
+    }
+  }
+  listEl.style.display = "block";
+}
+function genericComboSelect(comboId, code){
+  const h = comboHandlers[comboId];
+  if(!h) return;
+  h.onSelect(code);
+  const list = optionsList(h.optionsType);
+  const found = list.find(o=>o.code === code);
+  const input = document.getElementById(`${comboId}-input`);
+  if(input){
+    input.value = found ? found.ru : code;
+    input.classList.toggle("has-flag", !!(found && found.flag));
+  }
+  const flagEl = document.getElementById(`${comboId}-flag`);
+  if(flagEl) flagEl.innerHTML = (found && found.flag) ? flagImg(found.code) : "";
+  const listEl = document.getElementById(`${comboId}-list`);
+  if(listEl) listEl.style.display = "none";
+}
+function genericComboBlur(comboId){
+  setTimeout(()=>{
+    const h = comboHandlers[comboId];
+    if(!h) return;
+    // если селектор — ячейка формы, отмечаем, что пользователь с него уходил
+    if(cellRules[`${comboId}-input`]) onCellBlur(`${comboId}-input`, h.getValue() || "");
+    // после перерисовки старых элементов уже нет — выходим, чтобы не читать удаленное состояние
+    if(!document.getElementById(`${comboId}-input`)) return;
+    const list = optionsList(h.optionsType);
+    const code = h.getValue() || "";
+    const found = list.find(o=>o.code === code);
+    const input = document.getElementById(`${comboId}-input`);
+    if(input){
+      input.value = found ? found.ru : code;
+      input.classList.toggle("has-flag", !!(found && found.flag));
+    }
+    const flagEl = document.getElementById(`${comboId}-flag`);
+    if(flagEl) flagEl.innerHTML = (found && found.flag) ? flagImg(found.code) : "";
+    const listEl = document.getElementById(`${comboId}-list`);
+    if(listEl) listEl.style.display = "none";
+  }, 150);
+}
+
+// ---------- Универсальная сгруппированная форма ----------
+// Двухуровневая:  группа (страна / биржа) → строки
+// Трехуровневая:  группа (страна) → посредник (брокер) → строки
+const groupedConfig = {
+  bankloans: {
+    panelSub:"Выберите страну банка и&nbsp;добавьте кредиты — по&nbsp;строке на&nbsp;каждый.",
+    groupType:"country-foreign", groupLabel:"Страна банка",
+    groupDraftTitle:"Добавьте страну, где находится банк",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Кредиты и&nbsp;займы",
+    rowFields:[
+      {key:"bankName", type:"text", label:"Банк", placeholder:"Название банка"},
+      {key:"bankId", type:"text", label:"Идентификатор", placeholder:"ИНН или аналог"},
+      {key:"amount", type:"number", label:"Остаток долга", placeholder:"0", dated:true, money:true},
+      {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
+      {key:"basis", type:"text", label:"Основание", placeholder:"Кредитный договор"},
+    ],
+  },
+  receivable: {
+    panelSub:"Выберите страну должника и&nbsp;добавьте долги — по&nbsp;строке на&nbsp;каждый.",
+    groupType:"country", groupLabel:"Страна должника",
+    groupDraftTitle:"Добавьте страну, где находится должник",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Кто и&nbsp;сколько вам должен",
+    rowFields:[
+      {key:"name", type:"text", label:"Должник", placeholder:"ФИО или компания"},
+      {key:"personId", type:"text", label:"Идентификатор", placeholder:"ИИН или ИНН"},
+      {key:"amount", type:"number", label:"Сумма долга", placeholder:"0", dated:true, money:true},
+      {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
+      {key:"basis", type:"text", label:"Основание", placeholder:"Договор, расписка"},
+    ],
+  },
+  payable: {
+    panelSub:"Выберите страну кредитора и&nbsp;добавьте долги — по&nbsp;строке на&nbsp;каждый.",
+    groupType:"country", groupLabel:"Страна кредитора",
+    groupDraftTitle:"Добавьте страну, где находится кредитор",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Кому и&nbsp;сколько вы&nbsp;должны",
+    rowFields:[
+      {key:"name", type:"text", label:"Кредитор", placeholder:"ФИО или компания"},
+      {key:"personId", type:"text", label:"Идентификатор", placeholder:"ИИН или ИНН"},
+      {key:"amount", type:"number", label:"Сумма долга", placeholder:"0", dated:true, money:true},
+      {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
+      {key:"basis", type:"text", label:"Основание", placeholder:"Договор, расписка"},
+    ],
+  },
+  capital: {
+    panelSub:"Выберите страну, где создана компания, и&nbsp;добавьте доли — по&nbsp;строке на&nbsp;каждую.",
+    groupType:"country-foreign", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, где создана компания",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Доли в&nbsp;уставном капитале",
+    rowFields:[
+      {key:"orgName", type:"text", label:"Компания", placeholder:"ООО «Компания»"},
+      {key:"orgId", type:"text", label:"Идентификатор", placeholder:"ИНН или аналог"},
+      {key:"share", type:"number", label:"Размер доли, %", placeholder:"0", maxDecimals:3, max:100, min:0},
+    ],
+  },
+  ipobjects: {
+    panelSub:"Выберите страну регистрации права и&nbsp;добавьте объекты — по&nbsp;строке на&nbsp;каждый.",
+    groupType:"country", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, где зарегистрировано право",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Объекты интеллектуальной собственности",
+    rowFields:[
+      {key:"kind", type:"text", label:"Вид объекта", placeholder:"Патент, товарный знак…"},
+      {key:"docNumber", type:"text", label:"Номер патента", placeholder:"Номер документа"},
+      {key:"regDate", type:"date", label:"Дата регистрации", placeholder:""},
+    ],
+  },
+  realestate: {
+    panelSub:"Выберите страну, где находится недвижимость, и&nbsp;добавьте объекты — по&nbsp;строке на&nbsp;каждый.",
+    groupType:"country-foreign", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, где находится недвижимость",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Объекты недвижимости",
+    rowFields:[
+      {key:"kind", type:"select", label:"Вид имущества", placeholder:"Выберите вид",
+       options:[
+         "Жилое имущество (дом, дача, квартира)",
+         "Нежилая недвижимость (коммерческая недвижимость, парковочное место, гараж, складское помещение и т.п.)",
+         "Земельный участок",
+         "Иное",
+       ]},
+      {key:"kindOther", type:"text", label:"Что именно", placeholder:"Укажите вид", maxLen:50,
+       showIf:{key:"kind", value:"Иное"}},
+      {key:"cadastral", type:"text", label:"Кадастровый номер", placeholder:"Из документов", maxLen:50},
+      {key:"address", type:"text", label:"Адрес", placeholder:"Город, улица, дом", maxLen:50},
+    ],
+  },
+  vehicle: {
+    panelSub:"Выберите страну регистрации и&nbsp;добавьте транспорт — по&nbsp;строке на&nbsp;каждое средство.",
+    groupType:"country-foreign", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, где зарегистрирован транспорт",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Транспортные средства",
+    rowFields:[
+      {key:"kind", type:"text", label:"Вид транспорта", placeholder:"Легковой автомобиль"},
+      {key:"model", type:"text", label:"Марка, модель", placeholder:"HONDA Civic"},
+      {key:"regNumber", type:"text", label:"Гос. номер", placeholder:"Как в документах"},
+      {key:"vin", type:"text", label:"VIN-код", placeholder:"17 символов"},
+    ],
+  },
+  construction: {
+    panelSub:"Выберите страну и&nbsp;добавьте объекты — по&nbsp;строке на&nbsp;каждый договор.",
+    groupType:"country", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, где находится объект",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Объекты долевого строительства",
+    rowFields:[
+      {key:"devName", type:"text", label:"Застройщик", placeholder:"ООО «Застройщик»"},
+      {key:"devId", type:"text", label:"Идентификатор", placeholder:"ИНН или аналог"},
+      {key:"address", type:"text", label:"Адрес", placeholder:"Город, улица, дом", maxLen:50},
+      {key:"amount", type:"number", label:"Сумма по договору", placeholder:"0", dated:true, money:true},
+      {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
+    ],
+  },
+  accounts: {
+    panelSub:"Добавляйте по&nbsp;одному: страну, банк в&nbsp;ней, затем счета в&nbsp;этом банке.",
+    groupType:"country-foreign", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, в&nbsp;которой был счет",
+    deleteGroupLabel:"Удалить страну",
+    mid:{ label:"Банк", addLabel:"+ Добавить банк", pickFromDirectory:true, allowUpload:true,
+          blockTitle:"Банки в этой стране", blockSub:"Добавьте все банки, в которых у вас есть счета.",
+          fields:[
+            {key:"bankName", label:"Банк", placeholder:"Название банка"},
+            {key:"bankId", label:"Идентификатор", placeholder:"ИНН или аналог", inn:true, autofill:"bankName"},
+          ] },
+    rowsLabel:"Счета в&nbsp;этом банке",
+    rowFields:[
+      {key:"amount", type:"number", label:"Сумма", placeholder:"0", dated:true, money:true},
+      {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
+    ],
+  },
+  securities: {
+    panelSub:"Выберите страну, где выпущены бумаги, и&nbsp;добавьте их&nbsp;— по&nbsp;строке на&nbsp;каждую.",
+    groupType:"country-foreign", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, где выпущены бумаги",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Ценные бумаги",
+    rowFields:[
+      {key:"name", type:"text", label:"Название бумаги", placeholder:"Например, Пай БПИФ…"},
+      {key:"qty", type:"number", label:"Количество", placeholder:"0"},
+      {key:"price", type:"number", label:"Цена при покупке", placeholder:"0", money:true},
+      {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
+    ],
+  },
+  brokerage: {
+    panelSub:"Добавляйте по&nbsp;одному: страну, брокера в&nbsp;ней, затем счета у&nbsp;этого брокера.",
+    groupType:"country-foreign", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, где открыт брокерский счет",
+    deleteGroupLabel:"Удалить страну",
+    mid:{ label:"Брокер", addLabel:"+ Добавить брокера",
+          blockTitle:"Брокеры в этой стране", blockSub:"Добавьте всех брокеров, у которых есть счета.",
+          fields:[{key:"brokerName", label:"Брокер", placeholder:"Название брокера"}] },
+    rowsLabel:"Счета у этого брокера",
+    rowFields:[
+      {key:"accountNo", type:"text", label:"Номер счета", placeholder:"2032045243"},
+      {key:"amount", type:"number", label:"Сумма остатка", placeholder:"0", dated:true, money:true},
+      {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
+    ],
+  },
+  gold: {
+    panelSub:"Выберите страну, где хранится золото, и&nbsp;добавьте строки — по&nbsp;одной на&nbsp;каждую позицию.",
+    groupType:"country", groupLabel:"Страна",
+    groupDraftTitle:"Добавьте страну, где хранится золото",
+    deleteGroupLabel:"Удалить страну",
+    mid:null,
+    rowsLabel:"Золото в этой стране",
+    rowFields:[
+      {key:"weight", type:"number", label:"Вес, г", placeholder:"0"},
+      {key:"amount", type:"number", label:"Стоимость", placeholder:"0", dated:true, money:true},
+      {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
+    ],
+  },
+  digital: {
+    panelSub:"Выберите биржу или платформу и&nbsp;добавьте строки — по&nbsp;одной на&nbsp;каждый актив.",
+    groupType:"text", groupLabel:"Биржа или платформа",
+    groupPlaceholder:"Например, Binance",
+    groupDraftTitle:"Добавьте биржу или платформу, где хранились активы",
+    deleteGroupLabel:"Удалить биржу",
+    mid:null,
+    rowsLabel:"Активы на этой площадке",
+    rowFields:[
+      {key:"name", type:"text", label:"Актив", placeholder:"Bitcoin"},
+      {key:"qty", type:"text", label:"Количество", placeholder:"0.00000001"},
+      {key:"amountKzt", type:"number", label:"Цена, ₸", placeholder:"0", dated:true, money:true},
+      {key:"wallet", type:"text", label:"Кошелек", placeholder:"Реквизиты"},
+    ],
+  },
+};
+
+// Общее правило 1: ширина колонки — по большему из двух: заголовок или подсказка.
+// Заголовок набран мелким шрифтом в верхнем регистре, подсказка — обычным, поэтому коэффициенты разные.
+function textWidth(str, perChar, extra){
+  const clean = String(str || "").replace(/&nbsp;/g, " ").replace(/<[^>]*>/g, "");
+  return Math.ceil(clean.length * perChar) + extra;
+}
+function fieldWidth(f){
+  const byLabel = textWidth(fieldLabel(f), 6.0, 14);        // заголовок: 10.5px, верхний регистр
+  const byPlaceholder = textWidth(f.placeholder, 6.7, 26);  // подсказка: 12.5px + отступы поля
+  const w = Math.max(byLabel, byPlaceholder);
+  return Math.max(90, Math.min(320, w));                    // не уже 90 и не шире 320
+}
+
+// Общее правило 2: у денежных полей в подписи указываем дату, на которую нужна сумма
+function fieldLabel(f){
+  return f.dated ? `${f.label} на ${asOfDate()}` : f.label;
+}
+
+// Поля, с которых пользователь уже уходил: только их подсвечиваем как незаполненные
+const touchedCells = {};
+
+// Текст ошибки для ячейки: сначала правила формата, затем пустое обязательное поле
+function cellErrorText(f, value, cellId){
+  const msg = fieldError(f, value);
+  if(msg) return msg;
+  if(touchedCells[cellId] && !f.optional && !String(value == null ? "" : value).trim()) return "Заполните поле";
+  return "";
+}
+function refreshCell(cellId, value){
+  const f = cellRules[cellId];
+  if(!f) return;
+  const msg = cellErrorText(f, value, cellId);
+  const input = document.getElementById(cellId);
+  const errEl = document.getElementById(`${cellId}-err`);
+  if(input) input.classList.toggle("cell-invalid", !!msg);
+  if(errEl) errEl.textContent = msg;
+}
+function onCellBlur(cellId, value){
+  touchedCells[cellId] = true;
+  refreshCell(cellId, value);
+}
+
+// ---------- денежные поля: показываем разряды тысяч, пока поле не в фокусе ----------
+// В самом состоянии храним «сырое» число как обычно (например "393832.45") —
+// форматирование только визуальное, на экспорт и валидацию не влияет.
+function formatMoney(v){
+  if(v === "" || v == null) return "";
+  const n = Number(String(v).replace(/\s/g, "").replace(",", "."));
+  if(isNaN(n)) return "";
+  return n.toLocaleString("ru-RU", {maximumFractionDigits:2});
+}
+// используется в сгруппированных формах (gCell) — путь до строки передаётся массивом
+function moneyFieldInput(inputEl, sectionKey, itemId, path, field, cellId){
+  const clean = inputEl.value.replace(/[^\d.,\-]/g, "");
+  inputEl.dataset.raw = clean;
+  gUpdateRow(sectionKey, itemId, path, field, clean.replace(",", "."), cellId);
+}
+function moneyFieldBlur(inputEl, cellId){
+  const raw = inputEl.dataset.raw != null ? inputEl.dataset.raw : inputEl.value;
+  inputEl.value = formatMoney(raw);
+  onCellBlur(cellId, raw);
+}
+// используется в плоской таблице «Наличные» — там строки адресуются просто индексом
+function moneyFieldInputFlat(inputEl, sectionKey, itemId, rowIndex, field){
+  const clean = inputEl.value.replace(/[^\d.,\-]/g, "");
+  inputEl.dataset.raw = clean;
+  updateRowField(sectionKey, itemId, rowIndex, field, clean.replace(",", "."));
+}
+
+// Реестр правил по ячейкам — чтобы обработчик ввода знал, что проверять
+const cellRules = {};
+
+// Единая проверка значения: длина, число знаков после запятой, предельная величина
+function fieldError(f, value){
+  const v = String(value == null ? "" : value).trim();
+  if(!v) return "";
+  if(f.maxLen && v.length > f.maxLen) return `Не больше ${f.maxLen} символов (сейчас ${v.length})`;
+  if(f.maxDecimals != null){
+    const dec = (v.split(/[.,]/)[1] || "").length;
+    if(dec > f.maxDecimals) return `Не больше ${f.maxDecimals} знаков после запятой`;
+  }
+  if(f.max != null && (Number(v.replace(",", ".")) || 0) > f.max) return `Не больше ${f.max}`;
+  if(f.min != null && (Number(v.replace(",", ".")) || 0) < f.min) return `Не меньше ${f.min}`;
+  return "";
+}
+const hasRules = f => !!(f.maxLen || f.maxDecimals != null || f.max != null || f.min != null);
+
+function gCell(sectionKey, itemId, path, f, row){
+  const val = row[f.key] || "";
+  // условное поле: показываем только если другое поле строки имеет нужное значение
+  if(f.showIf && row[f.showIf.key] !== f.showIf.value) return "";
+
+  const cellId = `gcell-${sectionKey}-${itemId}-${path.join("-")}-${f.key}`;
+  cellRules[cellId] = f;
+  const err = cellErrorText(f, val, cellId);
+  const invalid = err ? "cell-invalid" : "";
+
+  let control;
+  if(f.type === "select"){
+    const opts = f.options.map(o=>`<option value="${o}" ${o === val ? "selected" : ""}>${o}</option>`).join("");
+    control = `<select id="${cellId}" class="form-cell ${invalid}"
+      onchange="gUpdateRowRender('${sectionKey}','${itemId}',[${path}],'${f.key}',this.value)"
+      onblur="onCellBlur('${cellId}',this.value)">
+      <option value="">${f.placeholder}</option>${opts}
+    </select>`;
+  } else if(f.type === "currency" || f.type === "country" || f.type === "country-foreign"){
+    const comboId = `combo-${sectionKey}-${itemId}-${path.join("-")}-${f.key}`;
+    cellRules[`${comboId}-input`] = f;
+    if(touchedCells[cellId]) touchedCells[`${comboId}-input`] = true;
+    control = genericComboHTML(comboId, f.type, val, f.placeholder,
+      (code)=>{ gRowRef(sectionKey, itemId, path)[f.key] = code; if(typeof saveToStorage === "function") saveToStorage(); },
+      ()=> gRowRef(sectionKey, itemId, path)[f.key] || ""
+    );
+    // ошибку для селектора показываем под ним, по его собственному id
+    return `<div class="cell-with-error">${control}
+      <div class="cell-error" id="${comboId}-input-err">${cellErrorText(f, val, `${comboId}-input`)}</div></div>`;
+  } else if(f.money){
+    control = `<input id="${cellId}" class="form-cell ${invalid}" type="text" inputmode="decimal"
+      placeholder="${f.placeholder}" value="${formatMoney(val)}" data-raw="${val}"
+      onfocus="this.value = this.dataset.raw || ''"
+      oninput="moneyFieldInput(this,'${sectionKey}','${itemId}',[${path}],'${f.key}','${cellId}')"
+      onblur="moneyFieldBlur(this,'${cellId}')">`;
+  } else {
+    const step = f.maxDecimals != null ? ` step="${f.maxDecimals ? "0." + "0".repeat(f.maxDecimals - 1) + "1" : "1"}"` : "";
+    control = `<input id="${cellId}" class="form-cell ${invalid}" type="${f.type}"${step}
+      placeholder="${f.placeholder}" value="${val}"
+      oninput="gUpdateRow('${sectionKey}','${itemId}',[${path}],'${f.key}',this.value,'${cellId}')"
+      onblur="onCellBlur('${cellId}',this.value)">`;
+  }
+  return `<div class="cell-with-error">${control}<div class="cell-error" id="${cellId}-err">${err}</div></div>`;
+}
+
+// path: [gi, ri] для двух уровней, [gi, mi, ri] — для трех
+function gRowRef(sectionKey, itemId, path){
+  const g = state[sectionKey][itemId].groups[path[0]];
+  return path.length === 3 ? g.mids[path[1]].rows[path[2]] : g.rows[path[1]];
+}
+function gUpdateRowRender(sectionKey, itemId, path, field, value){
+  gRowRef(sectionKey, itemId, path)[field] = value;
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+function gUpdateRow(sectionKey, itemId, path, field, value, cellId){
+  // без перерисовки — иначе поле теряет фокус при вводе
+  gRowRef(sectionKey, itemId, path)[field] = value;
+  if(cellId) refreshCell(cellId, value);
+  if(typeof saveToStorage === "function") saveToStorage();
+}
+
+function gRowsTable(sectionKey, itemId, cfg, rows, basePath){
+  // условные колонки показываем, только если они нужны хотя бы в одной строке
+  const fields = cfg.rowFields.filter(f =>
+    !f.showIf || rows.some(r => r[f.showIf.key] === f.showIf.value)
+  );
+  let html = `<div class="acc-entries-wrap"><div class="acc-entries-label">${cfg.rowsLabel}</div>`;
+  html += `<table class="form-table"><thead><tr>`;
+  fields.forEach(f=>{ html += `<th style="width:${fieldWidth(f)}px">${fieldLabel(f)}</th>`; });
+  html += `<th class="row-actions-col"></th></tr></thead><tbody>`;
+  rows.forEach((row, ri)=>{
+    const path = basePath.concat(ri);
+    html += `<tr>`;
+    fields.forEach(f=>{ html += `<td>${gCell(sectionKey, itemId, path, f, row)}</td>`; });
+    html += `<td class="row-actions-col"><button title="Удалить строку" onclick="gRemoveRow('${sectionKey}','${itemId}',[${path}])">×</button></td></tr>`;
+  });
+  html += `</tbody></table>`;
+  html += `<button class="acc-add-link" onclick="gAddRow('${sectionKey}','${itemId}',[${basePath}])">+ Добавить строку</button>`;
+  html += `</div>`;
+  return html;
+}
+
+function renderGroupedForm(sectionKey, itemId){
+  const cfg = groupedConfig[itemId];
+  const st = state[sectionKey][itemId];
+  const draft = st.draft;
+  let html = `<div class="form-panel">`;
+  html += `<div class="form-panel-head">
+      <div class="form-panel-title">📋 Заполните данные</div>
+      <div class="form-panel-sub">${cfg.panelSub}</div>
+    </div>`;
+
+  st.groups.forEach((group, gi)=>{
+    html += `<div class="acc-country-card">`;
+    // шапка группы
+    const gComboId = `g-head-${sectionKey}-${itemId}-${gi}`;
+    const groupField = cfg.groupType === "text"
+      ? `<input class="form-cell" type="text" placeholder="${cfg.groupPlaceholder || ""}" value="${group.gval || ""}"
+           oninput="gUpdateGroup('${sectionKey}','${itemId}',${gi},this.value)">`
+      : genericComboHTML(gComboId, cfg.groupType, group.gval, "Выберите страну",
+          (code)=>{ state[sectionKey][itemId].groups[gi].gval = code; },
+          ()=> state[sectionKey][itemId].groups[gi].gval || "");
+    html += `
+      <div class="acc-country-top">
+        <div class="acc-country-field">
+          <div class="acc-field-label">${cfg.groupLabel}</div>
+          ${groupField}
+        </div>
+        <button class="acc-delete-link" onclick="gRemoveGroup('${sectionKey}','${itemId}',${gi})">🗑 ${cfg.deleteGroupLabel}</button>
+      </div>
+    `;
+
+    if(cfg.mid){
+      html += `<div class="acc-banks-block">
+        <div class="acc-banks-header">
+          <div class="acc-banks-text">
+            <div class="acc-banks-title">${cfg.mid.blockTitle}</div>
+            <div class="acc-banks-sub">${cfg.mid.blockSub}</div>
+          </div>
+          <div class="acc-banks-actions">
+            ${cfg.mid.allowUpload
+              ? `<button class="btn upload-stmt-btn" onclick="uploadBankStatement('${sectionKey}','${itemId}',${gi})">📄 Загрузить справку</button>`
+              : ""}
+            ${!(draft && draft.level === "mid" && draft.gi === gi)
+              ? `<button class="btn acc-add-bank-btn" onclick="gStartDraft('${sectionKey}','${itemId}','mid',${gi})">${cfg.mid.addLabel}</button>`
+              : ""}
+          </div>
+        </div>`;
+      if(draft && draft.level === "mid" && draft.gi === gi){
+        html += gMidDraft(sectionKey, itemId, cfg);
+      }
+      group.mids.forEach((mid, mi)=>{
+        html += `<div class="acc-summary-bank">
+          <div class="acc-summary-bank-head">
+            ${cfg.mid.fields.map((mf, fi)=>{
+              const raw = mid[mf.key] || "";
+              const cellId = `gmid-${sectionKey}-${itemId}-${gi}-${mi}-${mf.key}`;
+              cellRules[cellId] = mf;
+              const err = cellErrorText(mf, raw, cellId);
+              return `
+                <div class="acc-bank-field ${fi === 0 ? "acc-bank-field-name" : "acc-bank-field-inn"}">
+                  <div class="acc-field-label">${mf.label}</div>
+                  <div class="cell-with-error">
+                    <input id="${cellId}" class="form-cell ${fi === 0 ? "acc-bank-name-input" : ""} ${err ? "cell-invalid" : ""}"
+                      type="text" placeholder="${mf.placeholder}" value="${raw}"
+                      oninput="gUpdateMid('${sectionKey}','${itemId}',${gi},${mi},'${mf.key}',this.value,this)"
+                      onblur="onCellBlur('${cellId}', this.value)">
+                    <div class="cell-error" id="${cellId}-err">${err}</div>
+                  </div>
+                </div>`;
+            }).join("")}
+            <button class="acc-remove-btn acc-remove-bank" title="Удалить" onclick="gRemoveMid('${sectionKey}','${itemId}',${gi},${mi})">×</button>
+          </div>`;
+        html += gRowsTable(sectionKey, itemId, cfg, mid.rows, [gi, mi]);
+        html += `</div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += gRowsTable(sectionKey, itemId, cfg, group.rows, [gi]);
+    }
+    html += `</div>`;
+  });
+
+  if(draft && draft.level === "group"){
+    html += gGroupDraft(sectionKey, itemId, cfg);
+  } else if(!draft){
+    html += `<button class="btn add-row-btn" onclick="gStartDraft('${sectionKey}','${itemId}','group')">+ Добавить ${cfg.groupType === "text" ? "площадку" : "страну"}</button>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function gGroupDraft(sectionKey, itemId, cfg){
+  const field = cfg.groupType === "text"
+    ? `<input class="form-cell" type="text" placeholder="${cfg.groupPlaceholder || ""}" value="${state[sectionKey][itemId].draft.data.gval || ""}"
+         oninput="gUpdateDraft('${sectionKey}','${itemId}','gval',this.value)">`
+    : genericComboHTML(`g-draft-${sectionKey}-${itemId}`, cfg.groupType,
+        state[sectionKey][itemId].draft.data.gval || "", "Начните вводить название страны",
+        (code)=>{ const d = state[sectionKey][itemId].draft; if(d) d.data.gval = code; },
+        ()=> { const d = state[sectionKey][itemId].draft; return d ? (d.data.gval || "") : ""; });
+  return `
+    <div class="acc-draft">
+      <div class="acc-draft-title">${cfg.groupDraftTitle}</div>
+      ${field}
+      <div class="acc-draft-actions">
+        <button class="btn primary" onclick="gCommitDraft('${sectionKey}','${itemId}')">Добавить</button>
+        <button class="btn" onclick="gCancelDraft('${sectionKey}','${itemId}')">Отмена</button>
+      </div>
+    </div>
+  `;
+}
+
+function gMidDraft(sectionKey, itemId, cfg){
+  const d = state[sectionKey][itemId].draft;
+  // банк выбирается из справочника; для остальных случаев — ручной ввод
+  if(cfg.mid.pickFromDirectory && !d.data._manual){
+    const pickerId = `bankpick-${sectionKey}-${itemId}`;
+    return `
+      <div class="acc-draft acc-draft-flat">
+        <div class="bank-picker">
+          <input id="${pickerId}" class="form-cell" type="text" autocomplete="off"
+            placeholder="Начните вводить название банка"
+            oninput="bankSearch('${sectionKey}','${itemId}','${pickerId}',this.value)"
+            onfocus="bankSearch('${sectionKey}','${itemId}','${pickerId}',this.value)">
+          <div id="${pickerId}-list" class="combo-list"></div>
+        </div>
+        <button class="acc-add-link" onclick="bankManualMode('${sectionKey}','${itemId}')">
+          Моего банка нет в списке — ввести вручную
+        </button>
+        <div class="acc-draft-actions">
+          <button class="btn" onclick="gCancelDraft('${sectionKey}','${itemId}')">Отмена</button>
+        </div>
+      </div>
+    `;
+  }
+  return `
+    <div class="acc-draft acc-draft-flat">
+      <div class="acc-draft-fields">
+        ${cfg.mid.fields.map(mf=>`
+          <input id="gmiddraft-${sectionKey}-${itemId}-${mf.key}" class="form-cell" type="text" placeholder="${mf.placeholder}"
+            value="${d.data[mf.key] || ""}"
+            oninput="gUpdateDraft('${sectionKey}','${itemId}','${mf.key}',this.value,this)">`).join("")}
+      </div>
+      <div class="acc-draft-actions">
+        <button class="btn primary" onclick="gCommitDraft('${sectionKey}','${itemId}')">Добавить</button>
+        <button class="btn" onclick="gCancelDraft('${sectionKey}','${itemId}')">Отмена</button>
+      </div>
+    </div>
+  `;
+}
+
+// выпадающий список банков под полем поиска
+function bankSearch(sectionKey, itemId, pickerId, query){
+  const listEl = document.getElementById(`${pickerId}-list`);
+  const input = document.getElementById(pickerId);
+  if(!listEl || !input) return;
+  const found = findBanks(query);
+  listEl.innerHTML = found.length
+    ? found.map(b=>`
+        <div class="combo-item bank-item"
+          onmousedown="event.preventDefault();bankPick('${sectionKey}','${itemId}','${b.inn}')">
+          <span class="bank-item-name">${b.name}</span>
+          <span class="bank-item-inn">ИНН ${b.inn}</span>
+        </div>`).join("")
+    : `<div class="combo-empty">Ничего не найдено — можно ввести вручную</div>`;
+  const r = input.getBoundingClientRect();
+  listEl.style.left = `${r.left}px`;
+  listEl.style.width = `${Math.max(r.width, 320)}px`;
+  const below = window.innerHeight - r.bottom;
+  if(below < 260 && r.top > below){
+    listEl.style.top = "auto";
+    listEl.style.bottom = `${window.innerHeight - r.top + 4}px`;
+  } else {
+    listEl.style.bottom = "auto";
+    listEl.style.top = `${r.bottom + 4}px`;
+  }
+  listEl.style.display = "block";
+}
+
+// выбрали банк — сразу добавляем его вместе с ИНН
+function bankPick(sectionKey, itemId, inn){
+  const bank = BANKS_RU.find(b => b.inn === inn);
+  if(!bank) return;
+  const st = state[sectionKey][itemId];
+  st.draft.data.bankName = bank.name;
+  st.draft.data.bankId = bank.inn;
+  gCommitDraft(sectionKey, itemId);
+}
+
+// переключение на ручной ввод для банков не из справочника
+function bankManualMode(sectionKey, itemId){
+  const d = state[sectionKey][itemId].draft;
+  if(d) d.data._manual = true;
+  renderSection(sectionKey);
+}
+
+function gStartDraft(sectionKey, itemId, level, gi){
+  state[sectionKey][itemId].draft = {level, gi, data:{}};
+  renderSection(sectionKey);
+}
+function gCancelDraft(sectionKey, itemId){
+  state[sectionKey][itemId].draft = null;
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+function gUpdateDraft(sectionKey, itemId, field, value, inputEl){
+  const d = state[sectionKey][itemId].draft;
+  if(!d) return;
+  const cfg = groupedConfig[itemId];
+  const mf = cfg && cfg.mid && cfg.mid.fields.find(f=>f.key === field);
+  if(mf && mf.inn){
+    const country = (state[sectionKey][itemId].groups[d.gi] || {}).gval;
+    const clean = sanitizeInn(value, country);
+    if(inputEl && inputEl.value !== clean) inputEl.value = clean;
+    value = clean;
+  }
+  d.data[field] = value;
+  if(mf && mf.autofill){
+    const match = bankDirectory[String(value).trim()];
+    if(match){
+      d.data[mf.autofill] = match;
+      const el = document.getElementById(`gmiddraft-${sectionKey}-${itemId}-${mf.autofill}`);
+      if(el) el.value = match;
+    }
+  }
+}
+function gCommitDraft(sectionKey, itemId){
+  const cfg = groupedConfig[itemId];
+  const st = state[sectionKey][itemId];
+  const d = st.draft;
+  if(!d) return;
+  if(d.level === "group"){
+    if(!d.data.gval) return;
+    st.groups.push(cfg.mid ? {gval:d.data.gval, mids:[]} : {gval:d.data.gval, rows:[{}]});
+    st.draft = cfg.mid ? {level:"mid", gi: st.groups.length - 1, data:{}} : null;
+  } else if(d.level === "mid"){
+    if(!d.data[cfg.mid.fields[0].key]) return; // первое поле обязательно
+    const mid = {rows:[{}]};
+    cfg.mid.fields.forEach(mf=>{ mid[mf.key] = d.data[mf.key] || ""; });
+    st.groups[d.gi].mids.push(mid);
+    st.draft = null;
+  }
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+
+function gUpdateGroup(sectionKey, itemId, gi, value){
+  state[sectionKey][itemId].groups[gi].gval = value;
+  if(typeof saveToStorage === "function") saveToStorage();
+}
+// Для российских банков идентификатор — это ИНН: только цифры, не длиннее 10.
+// Для других стран формат неизвестен, поэтому не ограничиваем.
+function sanitizeInn(value, country){
+  if(country !== "RU") return value;
+  return String(value).replace(/\D/g, "").slice(0, 10);
+}
+
+function gUpdateMid(sectionKey, itemId, gi, mi, key, value, inputEl){
+  const cfg = groupedConfig[itemId];
+  const group = state[sectionKey][itemId].groups[gi];
+  const mid = group.mids[mi];
+  const mf = cfg.mid.fields.find(f=>f.key === key);
+  if(mf && mf.inn){
+    const clean = sanitizeInn(value, group.gval);
+    if(inputEl && inputEl.value !== clean) inputEl.value = clean;
+    value = clean;
+  }
+  mid[key] = value;
+  const cellId = `gmid-${sectionKey}-${itemId}-${gi}-${mi}-${key}`;
+  refreshCell(cellId, value);
+  // по ИНН подставляем известное название банка
+  if(mf && mf.autofill){
+    const match = bankDirectory[String(value).trim()];
+    if(match){
+      mid[mf.autofill] = match;
+      const el = document.getElementById(`gmid-${sectionKey}-${itemId}-${gi}-${mi}-${mf.autofill}`);
+      if(el) el.value = match;
+      refreshCell(`gmid-${sectionKey}-${itemId}-${gi}-${mi}-${mf.autofill}`, match);
+    }
+  }
+  if(typeof saveToStorage === "function") saveToStorage();
+}
+function gAddRow(sectionKey, itemId, basePath){
+  const g = state[sectionKey][itemId].groups[basePath[0]];
+  (basePath.length === 2 ? g.mids[basePath[1]].rows : g.rows).push({});
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+function gRemoveRow(sectionKey, itemId, path){
+  const g = state[sectionKey][itemId].groups[path[0]];
+  if(path.length === 3) g.mids[path[1]].rows.splice(path[2], 1);
+  else g.rows.splice(path[1], 1);
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+// ================== РАСПОЗНАВАНИЕ СПРАВОК ЧЕРЕЗ СВОЙ СЕРВЕР-ПРОКСИ ==================
+// Ключ Anthropic хранится на сервере (см. extract-worker.js), сюда, в код сайта,
+// он никогда не попадает. Браузер отправляет только файл справки на прокси-адрес
+// ниже и получает обратно уже готовый разбор — {bankName, bankInn, balances}.
+//
+// ВАЖНО: впишите сюда адрес после разворачивания extract-worker.js
+// (см. инструкцию в самом файле воркера, шаг wrangler deploy).
+let PROXY_URL = "https://bank-statement-proxy.lakomka.workers.dev";
+
+// ---------- всплывающее уведомление о ходе распознавания ----------
+function showToast(msg, type, sticky){
+  let el = document.getElementById("toast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "toast";
+    document.body.appendChild(el);
+  }
+  el.className = "toast toast-" + (type || "info");
+  el.textContent = msg;
+  el.style.display = "block";
+  clearTimeout(el._hideTimer);
+  if(!sticky){ el._hideTimer = setTimeout(()=>{ el.style.display = "none"; }, 5000); }
+}
+function hideToast(){
+  const el = document.getElementById("toast");
+  if(el) el.style.display = "none";
+}
+
+// ---------- выбор файла и чтение как base64 ----------
+function pickFile(accept){
+  return new Promise(resolve=>{
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = accept;
+    input.onchange = () => resolve((input.files && input.files[0]) || null);
+    input.click();
+  });
+}
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result);
+      const m = result.match(/^data:([^;]+);base64,(.*)$/s);
+      if(!m){ reject(new Error("Не удалось прочитать файл")); return; }
+      resolve({mediaType: m[1] || file.type, base64: m[2]});
+    };
+    reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ---------- запрос к своему серверу-прокси (не к Anthropic напрямую) ----------
+async function callExtractProxy(mediaType, base64Data){
+  if(PROXY_URL.includes("ВСТАВЬТЕ-СВОЙ-АДРЕС")){
+    throw new Error("Сервер распознавания ещё не настроен (см. extract-worker.js)");
+  }
+  let resp;
+  try{
+    resp = await fetch(PROXY_URL, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({mediaType, base64: base64Data}),
+    });
+  }catch(e){
+    throw new Error("Не удалось связаться с сервером распознавания");
+  }
+  const data = await resp.json().catch(()=>null);
+  if(!resp.ok){
+    throw new Error((data && data.error) || `Сервер вернул ошибку ${resp.status}`);
+  }
+  return data;
+}
+
+// ---------- применяем распознанное к состоянию раздела ----------
+function applyExtractionResult(sectionKey, itemId, gi, result){
+  const st = state[sectionKey][itemId];
+  const group = st.groups[gi];
+  const balances = Array.isArray(result.balances)
+    ? result.balances
+        .filter(b => b && b.currency && b.amount != null)
+        // округление и агрегация по валютам — уже происходят в buildIsndJson() при экспорте;
+        // здесь суммы оставляем как есть, точно как в документе — чтобы юзер мог свериться глазами
+        .map(b => ({currency: b.currency, amount: Number(b.amount) || 0}))
+        .filter(b => b.amount !== 0) // нулевые остатки не декларируются — подстраховка на случай, если модель всё же прислала ноль
+    : [];
+  if(balances.length === 0){
+    showToast("Не удалось распознать суммы на справке — попробуйте ввести вручную", "warn");
+    return;
+  }
+
+  let bankName = result.bankName || "Банк из справки";
+  let bankId = result.bankInn ? String(result.bankInn).replace(/\D/g, "") : "";
+  const known = bankId && BANKS_RU.find(b => b.inn === bankId);
+  if(known){ bankName = known.name; bankId = known.inn; }
+
+  let mid = group.mids.find(m => m.bankId && bankId && m.bankId === bankId);
+  if(!mid){
+    mid = {bankName, bankId, rows:[]};
+    group.mids.push(mid);
+  }
+  balances.forEach(b=>{
+    mid.rows.push({amount:String(b.amount), currency:String(b.currency).toUpperCase()});
+  });
+  mid.rows = mid.rows.filter(r => r.amount || r.currency); // убираем пустую заготовку, если была
+
+  // подставленные автоматически поля сразу помечаем «тронутыми» — иначе пропуски
+  // (например, не распознанный ИНН) остаются невидимыми, пока пользователь сам
+  // не кликнет в каждое поле; так пропуск подсветится сразу на первом же рендере
+  const mi = group.mids.indexOf(mid);
+  touchedCells[`gmid-${sectionKey}-${itemId}-${gi}-${mi}-bankName`] = true;
+  touchedCells[`gmid-${sectionKey}-${itemId}-${gi}-${mi}-bankId`] = true;
+  mid.rows.forEach((row, ri)=>{
+    touchedCells[`gcell-${sectionKey}-${itemId}-${gi}-${mi}-${ri}-amount`] = true;
+    touchedCells[`combo-${sectionKey}-${itemId}-${gi}-${mi}-${ri}-currency-input`] = true;
+  });
+
+  saveToStorage();
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+  showToast(`Готово: ${bankName} — добавлено строк: ${balances.length}. Сверьте со справкой.`, "ok");
+}
+
+// ---------- сам сценарий загрузки справки ----------
+async function uploadBankStatement(sectionKey, itemId, gi){
+  const file = await pickFile(".pdf,.jpg,.jpeg,.png,.webp");
+  if(!file) return;
+
+  showToast("⏳ Читаем справку…", "info", true);
+  try{
+    const {mediaType, base64} = await fileToBase64(file);
+    const result = await callExtractProxy(mediaType, base64);
+    hideToast();
+    applyExtractionResult(sectionKey, itemId, gi, result);
+  }catch(err){
+    hideToast();
+    showToast("Не получилось: " + err.message, "warn");
+  }
+}
+
+// Свое окно подтверждения вместо системного confirm()
+function askConfirm(opts){
+  const old = document.getElementById("confirm-overlay");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "confirm-overlay";
+  el.className = "confirm-overlay";
+  el.innerHTML = `
+    <div class="confirm-box" role="dialog" aria-modal="true">
+      <div class="confirm-title">${opts.title}</div>
+      ${opts.text ? `<div class="confirm-text">${opts.text}</div>` : ""}
+      <div class="confirm-actions">
+        <button class="btn" id="confirm-no">${opts.cancelLabel || "Отмена"}</button>
+        <button class="btn confirm-danger" id="confirm-yes">${opts.okLabel || "Удалить"}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.querySelector("#confirm-no").onclick = close;
+  el.querySelector("#confirm-yes").onclick = () => { close(); opts.onConfirm(); };
+  el.onclick = e => { if(e.target === el) close(); };      // клик по фону закрывает
+  document.addEventListener("keydown", function esc(e){     // Esc тоже закрывает
+    if(e.key === "Escape"){ close(); document.removeEventListener("keydown", esc); }
+  });
+  const yes = el.querySelector("#confirm-yes");
+  if(yes) yes.focus();
+}
+
+function gRemoveGroup(sectionKey, itemId, gi){
+  const cfg = groupedConfig[itemId];
+  const g = state[sectionKey][itemId].groups[gi];
+  const label = cfg.groupType === "text"
+    ? (g.gval || "эту площадку")
+    : (g.gval ? formatOption(COUNTRIES, g.gval) : "эту страну");
+  askConfirm({
+    title: `Удалить ${label}?`,
+    text: "Все данные внутри будут потеряны.",
+    onConfirm(){
+      state[sectionKey][itemId].groups.splice(gi, 1);
+      state[sectionKey][itemId].draft = null;
+      renderSection(sectionKey);
+      renderSidebar(sectionKey);
+    }
+  });
+}
+function gRemoveMid(sectionKey, itemId, gi, mi){
+  const cfg = groupedConfig[itemId];
+  const mid = state[sectionKey][itemId].groups[gi].mids[mi];
+  const label = mid[cfg.mid.fields[0].key] || cfg.mid.label.toLowerCase();
+  askConfirm({
+    title: `Удалить ${label}?`,
+    text: "Все строки внутри будут потеряны.",
+    onConfirm(){
+      state[sectionKey][itemId].groups[gi].mids.splice(mi, 1);
+      state[sectionKey][itemId].draft = null;
+      renderSection(sectionKey);
+      renderSidebar(sectionKey);
+    }
+  });
+}
+
+function gIsFilled(sectionKey, itemId){
+  const cfg = groupedConfig[itemId];
+  const st = state[sectionKey][itemId];
+  if(!st.groups || st.groups.length === 0) return false;
+  const rowsOk = rows => rows.length > 0 &&
+    rows.every(r => cfg.rowFields.every(f => {
+      if(f.showIf && r[f.showIf.key] !== f.showIf.value) return true; // поле скрыто — не требуем
+      const v = String(r[f.key] || "").trim();
+      if(fieldError(f, v)) return false; // значение не проходит проверку
+      if(f.optional) return true; // необязательное поле — можно оставить пустым
+      return v !== "";
+    }));
+  return st.groups.every(g => {
+    if(!g.gval) return false;
+    if(cfg.mid) return g.mids.length > 0 && g.mids.every(m => cfg.mid.fields.every(f=>String(m[f.key]||"").trim()) && rowsOk(m.rows));
+    return rowsOk(g.rows);
+  });
+}
+
+function renderFormFields(sectionKey, itemId){
+  const fields = fieldConfig[itemId];
+  const st = state[sectionKey][itemId];
+  let html = `<div class="form-panel">`;
+  html += `
+    <div class="form-panel-head">
+      <div class="form-panel-title">📋 Заполните данные</div>
+      <div class="form-panel-sub">Добавьте отдельную строку на каждый актив — сколько нужно.</div>
+    </div>
+  `;
+  html += `<div class="form-table-wrap"><table class="form-table"><thead><tr><th class="rownum-col">№</th>`;
+  fields.forEach(f=>{ html += `<th style="width:${fieldWidth(f)}px">${fieldLabel(f)}</th>`; });
+  html += `<th class="row-actions-col"></th></tr></thead><tbody>`;
+
+  st.rows.forEach((row, idx)=>{
+    html += `<tr><td class="rownum-col">${idx+1}</td>`;
+    fields.forEach(f=>{
+      const val = row[f.key] || "";
+      if(f.type === "currency" || f.type === "country"){
+        const comboId = `combo-${sectionKey}-${itemId}-${idx}-${f.key}`;
+        html += `<td>${genericComboHTML(comboId, f.type, val, f.placeholder,
+          (code)=>updateRowField(sectionKey, itemId, idx, f.key, code),
+          ()=>(state[sectionKey][itemId].rows[idx] || {})[f.key] || ""
+        )}</td>`;
+      } else if(f.money){
+        const cellId = `cell-${sectionKey}-${itemId}-${idx}-${f.key}`;
+        html += `
+          <td><input id="${cellId}" class="form-cell" type="text" inputmode="decimal"
+            placeholder="${f.placeholder}" value="${formatMoney(val)}" data-raw="${val}"
+            onfocus="this.value = this.dataset.raw || ''"
+            oninput="moneyFieldInputFlat(this,'${sectionKey}','${itemId}',${idx},'${f.key}')"
+            onblur="this.value = formatMoney(this.dataset.raw)"></td>
+        `;
+      } else {
+        const cellId = `cell-${sectionKey}-${itemId}-${idx}-${f.key}`;
+        html += `
+          <td><input id="${cellId}" class="form-cell" type="${f.type}" placeholder="${f.placeholder}"
+            value="${val}" ${f.readonly ? "readonly" : ""}
+            oninput="updateRowField('${sectionKey}','${itemId}',${idx},'${f.key}',this.value)"></td>
+        `;
+      }
+    });
+    html += `<td class="row-actions-col"><button title="Удалить строку" onclick="removeRow('${sectionKey}','${itemId}',${idx})">×</button></td></tr>`;
+  });
+
+  html += `</tbody></table>`;
+  html += `<button class="btn add-row-btn" onclick="addRow('${sectionKey}','${itemId}')">+ Добавить строку</button>`;
+  html += `</div>`;
+  html += `</div>`;
+  return html;
+}
+
+function updateRowField(sectionKey, itemId, rowIndex, fieldKey, value){
+  const st = state[sectionKey][itemId];
+  st.rows[rowIndex][fieldKey] = value;
+  // автоподстановка названия банка по ИНН — точечно патчим соседнюю ячейку, без полной перерисовки
+  if(itemId === "accounts" && fieldKey === "bankId"){
+    const match = bankDirectory[value.trim()];
+    if(match){
+      st.rows[rowIndex].bankName = match;
+      if(!st.rows[rowIndex].country) st.rows[rowIndex].country = "RU";
+      const nameInput = document.getElementById(`cell-${sectionKey}-${itemId}-${rowIndex}-bankName`);
+      if(nameInput) nameInput.value = match;
+      const countryInput = document.getElementById(`cell-${sectionKey}-${itemId}-${rowIndex}-country`);
+      if(countryInput && !countryInput.value) countryInput.value = "RU";
+    }
+  }
+  // сознательно НЕ вызываем renderSection здесь — иначе поле теряло бы фокус при каждом нажатии клавиши
+  if(typeof saveToStorage === "function") saveToStorage();
+}
+
+function addRow(sectionKey, itemId){
+  const st = state[sectionKey][itemId];
+  st.rows.push({});
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+
+function removeRow(sectionKey, itemId, rowIndex){
+  const st = state[sectionKey][itemId];
+  st.rows.splice(rowIndex, 1);
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+
+function renderSection(key){
+  if(typeof saveToStorage === "function") saveToStorage(); // автосохранение при любом изменении
+  const s = sections[key];
+  const content = document.getElementById("content");
+
+  // сортировка: исключенные карточки уходят вниз, остальные сохраняют исходный порядок
+  const ordered = s.items.slice().sort((a,b)=>{
+    const ea = state[key][a.id].decision === "exclude" ? 1 : 0;
+    const eb = state[key][b.id].decision === "exclude" ? 1 : 0;
+    return ea - eb;
+  });
+
+  let html = `<h2>${s.icon} ${s.title}</h2><p class="subtitle"><span class="date-pill">на ${asOfDate()}</span></p>`;
+
+  ordered.forEach(it=>{
+    const st = state[key][it.id];
+
+    // ---- исключенная карточка: компактная строка с&nbsp;зачеркиванием ----
+    if(st.decision === "exclude"){
+      html += `
+        <div class="q-card excluded">
+          <span class="q-card-title strike">${it.title}</span>
+          <span class="excluded-note">Пропущено · <span class="undo" onclick="reopenCard('${key}','${it.id}')">вернуть</span></span>
+        </div>
+      `;
+      return;
+    }
+
+    // ---- бейдж статуса карточки (иконка + подпись) ----
+    // когда карточка открыта — вместо статуса показываем кнопку «Свернуть»
+    let headRightHTML = "";
+    if(st.expanded){
+      headRightHTML = `<button class="collapse-btn" onclick="event.stopPropagation();collapseCard('${key}','${it.id}')">︿ Свернуть</button>`;
+    } else if(st.decision === "include" && isDataFilled(key, it.id)){
+      headRightHTML = `<span class="q-card-badge done"><span class="badge-icon">✅</span>Готово</span>`;
+    } else if(st.decision === "include"){
+      headRightHTML = `<span class="q-card-badge waiting"><span class="badge-icon">⏳</span>Не&nbsp;заполнено</span>`;
+    } else if(st.everOpened){
+      headRightHTML = `<span class="q-card-badge pending">Жду ваш ответ</span>`;
+    } else {
+      headRightHTML = `<span class="q-card-badge notopened"><span class="badge-icon">🟢</span>Посмотреть</span>`;
+    }
+
+    html += `
+      <div class="q-card ${st.expanded ? 'expanded':''}">
+        <div class="q-card-head" onclick="toggleCard('${key}','${it.id}')">
+          <span class="q-card-title">${it.title}</span>
+          ${headRightHTML}
+        </div>
+    `;
+
+    if(st.expanded){
+      html += `<div class="q-card-body">`;
+
+      // вопрос и&nbsp;подсказка слева, кнопки да/нет справа — держим в читаемой узкой колонке
+      html += `<div class="narrow-col">
+        <div class="question-row">
+          <div class="question-text-col">
+            <div class="q-text">${withDate(it.q)}</div>
+            <div class="q-hint">${it.hint}</div>
+          </div>
+          <div class="switch">
+            <button class="${st.answered===true?'active':''}" onclick="event.stopPropagation();answerFirst('${key}','${it.id}',true)">Да</button>
+            <button class="${st.answered===false?'active no':''}" onclick="event.stopPropagation();answerFirst('${key}','${it.id}',false)">Нет</button>
+          </div>
+        </div>
+      </div>`;
+
+      // журнал сообщений бота — стабильный контейнер с id, чтобы точечно дописывать сообщения без перерисовки всего блока
+      let chatHTML = "";
+      if(st.answered !== null){
+        chatHTML += `<div class="bot-chat" id="chat-${key}-${it.id}">`;
+        st.chatLog.forEach(msg=>{ chatHTML += botRowHTML(msg.msg, msg.style, false); });
+        if(st.thinking){
+          chatHTML += botRowHTML("", "", true);
+        } else if(st.decision === null){
+          // кнопки решения — как ответ на последний вопрос бота, а не отдельный блок
+          chatHTML += `<div class="inline-decision">${decisionActionsHTML(key, it.id, st.answered)}</div>`;
+        }
+        chatHTML += `</div>`;
+      }
+
+      let actionsHTML = `<div id="actions-${key}-${it.id}">`;
+      if(st.decision === "include" && groupedConfig[it.id]){
+        actionsHTML += renderGroupedForm(key, it.id);
+      } else if(st.decision === "include" && fieldConfig[it.id]){
+        actionsHTML += renderFormFields(key, it.id);
+      }
+      actionsHTML += `</div>`;
+
+            // как только появилась настоящая форма — по умолчанию видна только таблица,
+      // переписка с ботом прячется за кнопку (и снова прячется при каждом повторном открытии карточки)
+      if(st.decision === "include" && (fieldConfig[it.id] || groupedConfig[it.id])){
+        html += `
+          <button class="chat-toggle-btn" onclick="toggleChatVisible('${key}','${it.id}')">
+            ${st.chatVisible ? "▲ Скрыть подсказки от бота" : "💬 Открыть подсказки от бота"}
+          </button>
+        `;
+        if(st.chatVisible){
+          html += `<div class="narrow-col">${chatHTML}</div>`;
+        }
+        html += actionsHTML;
+      } else {
+        html += `<div class="narrow-col">${chatHTML}${actionsHTML}</div>`;
+      }
+
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  content.innerHTML = html;
+  // прокручиваем каждый чат к&nbsp;последнему сообщению
+  document.querySelectorAll(".bot-chat").forEach(el=>{ el.scrollTop = el.scrollHeight; });
+}
+
+// ---------- переиспользуемые кусочки разметки бота ----------
+function botRowHTML(msg, style, isThinking){
+  if(isThinking){
+    return `<div class="bot-row thinking-node"><div class="bot-avatar">🤖</div><div class="bot-bubble thinking"><span></span><span></span><span></span></div></div>`;
+  }
+  // сообщение-совет: особый блок с&nbsp;иконкой и&nbsp;ссылкой на&nbsp;инструкцию
+  if(typeof msg === "object" && msg.type === "tip"){
+    return `
+      <div class="bot-row">
+        <div class="bot-avatar">🤖</div>
+        <div class="bot-bubble tip">
+          <div class="tip-title">💡 Полезный совет</div>
+          <div>${msg.text}</div>
+          ${msg.link ? `<a class="tip-link" href="${msg.link}" target="_blank" rel="noopener">Узнать как →</a>` : ""}
+        </div>
+      </div>
+    `;
+  }
+  const text = (typeof msg === "object") ? msg.text : msg;
+  return `<div class="bot-row"><div class="bot-avatar">🤖</div><div class="bot-bubble ${style}">${text}</div></div>`;
+}
+function decisionActionsHTML(sectionKey, itemId, answered){
+  if(answered === true){
+    return `
+      <div class="decision-actions">
+        <button class="bot-action-btn bot-action-primary" onclick="decide('${sectionKey}','${itemId}','include')">Внести в&nbsp;декларацию</button>
+        <button class="bot-action-btn" onclick="decide('${sectionKey}','${itemId}','exclude')">Не&nbsp;вносить</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="decision-actions">
+      <button class="bot-action-btn" onclick="decide('${sectionKey}','${itemId}','exclude')">Убрать раздел</button>
+    </div>
+  `;
+}
+
+function toggleCard(sectionKey, itemId){
+  const items = sections[sectionKey].items;
+  const wasExpanded = state[sectionKey][itemId].expanded;
+  // в&nbsp;разделе одновременно может быть открыта только одна карточка
+  items.forEach(it=>{ state[sectionKey][it.id].expanded = false; });
+  const st = state[sectionKey][itemId];
+  st.expanded = !wasExpanded;
+  st.everOpened = true;
+  // при каждом (пере)открытии карточки с уже заполняемой формой — сначала видна только таблица
+  if(st.expanded && st.decision === "include"){ st.chatVisible = false; }
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+
+function toggleChatVisible(sectionKey, itemId){
+  const st = state[sectionKey][itemId];
+  st.chatVisible = !st.chatVisible;
+  renderSection(sectionKey);
+}
+
+function collapseCard(sectionKey, itemId){
+  state[sectionKey][itemId].expanded = false;
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+
+
+function asMsgArray(value, fallback){
+  if(!value) return [fallback];
+  return Array.isArray(value) ? value : [value];
+}
+
+// показывает "думает", раскрывает следующее сообщение из&nbsp;очереди, затем повторяет —
+// работает напрямую с DOM (без вызова renderSection), чтобы старые сообщения не&nbsp;пересоздавались
+// и&nbsp;их&nbsp;анимация появления не&nbsp;проигрывалась заново при каждом тике
+// ВРЕМЕННО НА ПЕРИОД ТЕСТИРОВАНИЯ: ускоренная анимация сообщений бота.
+// Боевые значения: BOT_THINK_MS = 1300, BOT_PAUSE_MS = 700.
+const BOT_THINK_MS = 120; // сколько «думает» перед сообщением
+const BOT_PAUSE_MS = 60;  // пауза между сообщениями
+
+function playBotSequence(sectionKey, itemId, queue, style, token){
+  const st = state[sectionKey][itemId];
+  if(st.thinkToken !== token) return; // ответ уже сменился — этот поток сообщений устарел
+  const chatEl = document.getElementById(`chat-${sectionKey}-${itemId}`);
+
+  if(queue.length === 0){
+    st.thinking = false;
+    if(chatEl){
+      const t = chatEl.querySelector(".thinking-node");
+      if(t) t.remove();
+      if(st.decision === null){
+        chatEl.insertAdjacentHTML("beforeend", `<div class="inline-decision">${decisionActionsHTML(sectionKey, itemId, st.answered)}</div>`);
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
+    }
+    return;
+  }
+
+  st.thinking = true;
+  if(chatEl && !chatEl.querySelector(".thinking-node")){
+    chatEl.insertAdjacentHTML("beforeend", botRowHTML("", "", true));
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+  setTimeout(()=>{
+    if(st.thinkToken !== token) return;
+    const msg = queue.shift();
+    st.chatLog.push({msg, style});
+    if(chatEl){
+      const t = chatEl.querySelector(".thinking-node");
+      if(t) t.remove();
+      chatEl.insertAdjacentHTML("beforeend", botRowHTML(msg, style, false));
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+    setTimeout(()=> playBotSequence(sectionKey, itemId, queue, style, token), BOT_PAUSE_MS);
+  }, BOT_THINK_MS);
+}
+
+function answerFirst(sectionKey, itemId, val){
+  const st = state[sectionKey][itemId];
+  const itemDef = sections[sectionKey].items.find(i=>i.id===itemId);
+  st.answered = val;
+  st.decision = null;
+  st.chatLog = []; // новый ответ — начинаем диалог заново для этого вопроса
+  st.thinking = true; // важно выставить ДО первого рендера, иначе кнопки решения мелькнут раньше сообщений бота
+  st.thinkToken = (st.thinkToken || 0) + 1;
+  const token = st.thinkToken;
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+
+  const messages = val
+    ? asMsgArray(itemDef.recommendYes, "По&nbsp;правилам, этот раздел должен быть в&nbsp;декларации.")
+    : asMsgArray(itemDef.recommendNo, "Супер, вам не&nbsp;нужно заполнять этот раздел в&nbsp;декларации 👌 Нажмите «Убрать раздел», чтобы скрыть его из&nbsp;списка.");
+  playBotSequence(sectionKey, itemId, messages.slice(), val ? "include" : "exclude", token);
+}
+
+function decide(sectionKey, itemId, decision){
+  const st = state[sectionKey][itemId];
+  st.decision = decision;
+  if(decision === "include"){
+    st.chatVisible = false; // сразу прячем диалог — на экране появляется таблица
+    if(groupedConfig[itemId] && st.groups.length === 0){
+      st.draft = {level:"group", data:{}}; // сразу открываем первый шаг группировки
+    } else if(fieldConfig[itemId] && st.rows.length === 0){
+      st.rows.push({}); // сразу даем одну пустую строку, чтобы не показывать пустую таблицу
+    }
+  } else {
+    st.expanded = false;
+  }
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+
+function undecide(sectionKey, itemId){
+  const st = state[sectionKey][itemId];
+  st.decision = null;
+  // answered остается true, пользователь снова видит рекомендацию добавить/не&nbsp;добавлять
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+
+function reopenCard(sectionKey, itemId){
+  const st = state[sectionKey][itemId];
+  st.decision = null;
+  st.answered = null;
+  st.chatLog = [];
+  st.expanded = true;
+  renderSection(sectionKey);
+  renderSidebar(sectionKey);
+}
+
+function renderFinish(){
+  const content = document.getElementById("content");
+  let html = `<h2>Завершение декларации</h2><p class="subtitle">Проверьте разделы, затем укажите данные профиля · <span class="date-pill">сведения на ${asOfDate()}</span></p>`;
+
+  let allReady = true;
+  sectionOrder.forEach(key=>{
+    const s = sections[key];
+    const st = sectionStatus(key);
+    const needsFix = (st === "hasgaps" || st === "inprogress" || st === "notstarted");
+    if(needsFix) allReady = false;
+    html += `
+      <div class="summary-row">
+        <span>${s.icon} ${s.title} — <strong>${statusLabel[st]}</strong></span>
+        ${needsFix ? `<span class="fix" onclick="navigate('${key}')">исправить →</span>` : ""}
+      </div>
+    `;
+  });
+
+  html += `
+    <div class="profile-form">
+      <h3>Заполните ваши данные</h3>
+      <div class="field-row">
+        <div class="field"><label>ИИН</label>
+          <input type="text" inputmode="numeric" placeholder="000000000000" value="${profile.iin}"
+            class="${profileFieldError('iin', profile.iin) ? 'cell-invalid' : ''}"
+            oninput="updateProfileQuiet('iin',this.value,this)"
+            onblur="onProfileBlur('iin',this.value,this)">
+          <div class="cell-error" id="profile-err-iin">${profileFieldError('iin', profile.iin)}</div></div>
+        <div class="field"><label>ФИО</label>
+          <input type="text" placeholder="Фамилия Имя Отчество" value="${profile.nameRu}"
+            class="${profileFieldError('nameRu', profile.nameRu) ? 'cell-invalid' : ''}"
+            oninput="updateProfileQuiet('nameRu',this.value,this)"
+            onblur="onProfileBlur('nameRu',this.value,this)">
+          <div class="cell-error" id="profile-err-nameRu">${profileFieldError('nameRu', profile.nameRu)}</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Телефон</label>
+          <input type="text" inputmode="tel" placeholder="+7" value="${profile.phone}"
+            class="${profileFieldError('phone', profile.phone) ? 'cell-invalid' : ''}"
+            oninput="updateProfileQuiet('phone',this.value,this)"
+            onblur="onProfileBlur('phone',this.value,this)">
+          <div class="cell-error" id="profile-err-phone">${profileFieldError('phone', profile.phone)}</div></div>
+        <div class="field"><label>Email</label>
+          <input type="text" inputmode="email" placeholder="you@example.com" value="${profile.email}"
+            class="${profileFieldError('email', profile.email) ? 'cell-invalid' : ''}"
+            oninput="updateProfileQuiet('email',this.value,this)"
+            onblur="onProfileBlur('email',this.value,this)">
+          <div class="cell-error" id="profile-err-email">${profileFieldError('email', profile.email)}</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Резидентство</label>
+          <select class="${profileFieldError('residency', profile.residency) ? 'cell-invalid' : ''}"
+            onchange="updateProfileQuiet('residency',this.value,this)"
+            onblur="onProfileBlur('residency',this.value,this)">
+            <option value="">Выберите</option>
+            <option value="A" ${profile.residency==="A"?"selected":""}>Резидент РК</option>
+            <option value="B" ${profile.residency==="B"?"selected":""}>Нерезидент РК</option>
+          </select>
+          <div class="cell-error" id="profile-err-residency">${profileFieldError('residency', profile.residency)}</div>
+        </div>
+        <div class="field">
+          <label>Вид декларации</label>
+          <select class="${profileFieldError('declType', profile.declType) ? 'cell-invalid' : ''}"
+            onchange="updateProfile('declType',this.value)"
+            onblur="onProfileBlur('declType',this.value,this)">
+            <option value="">Выберите</option>
+            <option value="PRIORITY" ${profile.declType==="PRIORITY"?"selected":""}>Первоначальная</option>
+            <option value="REGULAR" ${profile.declType==="REGULAR"?"selected":""}>Очередная</option>
+            <option value="ADDITIONAL" ${profile.declType==="ADDITIONAL"?"selected":""}>Дополнительная</option>
+            <option value="NOTICE" ${profile.declType==="NOTICE"?"selected":""}>По уведомлению</option>
+          </select>
+          <div class="cell-error" id="profile-err-declType">${profileFieldError('declType', profile.declType)}</div>
+        </div>
+      </div>
+      ${profile.declType === "NOTICE" ? `
+      <div class="field-row">
+        <div class="field"><label>Номер уведомления</label>
+          <input type="text" placeholder="Номер из уведомления" value="${profile.noticeNumber}"
+            oninput="updateProfileQuiet('noticeNumber',this.value,this)"></div>
+        <div class="field"><label>Дата уведомления</label>
+          <input type="date" value="${profile.noticeDate || ""}"
+            oninput="updateProfileQuiet('noticeDate',this.value,this)"></div>
+      </div>` : ""}
+    </div>
+
+    <div class="final-cta">
+      <button class="btn primary" ${allReady ? "" : "disabled style='opacity:.5;cursor:not-allowed;'"} onclick="finalExport()">Сформировать декларацию для ИСНД</button>
+      ${!allReady ? `<div class="warning-list">Сначала исправьте разделы с&nbsp;пометкой «Есть пропуски» выше.</div>` : ""}
+    </div>
+  `;
+  content.innerHTML = html;
+}
+
+
+
+// ================== ПРОФИЛЬ, СОХРАНЕНИЕ, ЭКСПОРТ И ИМПОРТ ==================
+
+const profile = {
+  iin:"", nameRu:"", phone:"", email:"",
+  residency:"", declType:"", noticeNumber:"", noticeDate:"",
+};
+
+// Проверка полей профиля. Возвращает текст ошибки или пустую строку.
+function profileError(field, value){
+  const v = String(value || "").trim();
+  if(!v) return "";
+  if(field === "iin"){
+    if(!/^\d+$/.test(v)) return "Только цифры";
+    if(v.length !== 12) return `ИИН состоит из 12 цифр (сейчас ${v.length})`;
+  }
+  if(field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return "Похоже, адрес указан с ошибкой";
+  if(field === "phone"){
+    const digits = v.replace(/\D/g, "");
+    if(digits.length < 10 || digits.length > 15) return "Похоже, номер указан не полностью";
+  }
+  return "";
+}
+
+const REQUIRED_PROFILE = ["iin","nameRu","phone","email","residency","declType"];
+const touchedProfile = {};
+
+function profileFieldError(field, value){
+  const msg = profileError(field, value);
+  if(msg) return msg;
+  if(touchedProfile[field] && REQUIRED_PROFILE.includes(field) && !String(value || "").trim()) return "Заполните поле";
+  return "";
+}
+function onProfileBlur(field, value, inputEl){
+  touchedProfile[field] = true;
+  validateProfileField(field, value, inputEl);
+}
+function validateProfileField(field, value, inputEl){
+  const msg = profileFieldError(field, value);
+  const errEl = document.getElementById(`profile-err-${field}`);
+  if(errEl) errEl.textContent = msg;
+  if(inputEl) inputEl.classList.toggle("cell-invalid", !!msg);
+  return msg;
+}
+
+function updateProfileQuiet(field, value, inputEl){
+  // ИИН — только цифры, лишнее отсекаем сразу при вводе
+  if(field === "iin"){
+    const clean = value.replace(/\D/g, "").slice(0, 12);
+    if(inputEl && inputEl.value !== clean) inputEl.value = clean;
+    value = clean;
+  }
+  profile[field] = value;
+  validateProfileField(field, value, inputEl);
+  saveToStorage(); // без перерисовки — иначе поле теряет фокус
+}
+function updateProfile(field, value){
+  profile[field] = value;
+  saveToStorage();
+  // поля уведомления появляются только для вида «По уведомлению» — нужна перерисовка
+  if(field === "declType") renderFinish();
+}
+
+// ---------- автосохранение в браузере ----------
+const STORAGE_KEY = "declaration250_draft_v1";
+const TRANSIENT = ["expanded","thinking","thinkToken","draft","chatVisible"]; // не сохраняем
+
+function collectState(){
+  const data = {version:1, reportYear, profile, sections:{}};
+  sectionOrder.forEach(sk=>{
+    data.sections[sk] = {};
+    sections[sk].items.forEach(it=>{
+      const st = state[sk][it.id];
+      const copy = {};
+      Object.keys(st).forEach(k=>{ if(!TRANSIENT.includes(k)) copy[k] = st[k]; });
+      data.sections[sk][it.id] = copy;
+    });
+  });
+  return data;
+}
+
+// Черновики, сохраненные до объединения форм, хранили счета и бумаги в своей структуре.
+// Приводим их к общему виду: country → gval, banks → mids, entries/rows → rows.
+function migrateGroups(st){
+  if(!Array.isArray(st.groups)) return;
+  st.groups = st.groups.map(g=>{
+    const out = {gval: g.gval != null ? g.gval : (g.country || "")};
+    if(Array.isArray(g.banks)){
+      out.mids = g.banks.map(b=>({bankName:b.bankName || "", bankId:b.bankId || "", rows:b.entries || b.rows || []}));
+    } else if(Array.isArray(g.mids)){
+      out.mids = g.mids;
+    } else {
+      out.rows = g.rows || [];
+    }
+    return out;
+  });
+}
+
+function applyState(data){
+  if(!data || !data.sections) return false;
+  if(data.profile) Object.keys(profile).forEach(k=>{ if(k in data.profile) profile[k] = data.profile[k]; });
+  sectionOrder.forEach(sk=>{
+    const secData = data.sections[sk];
+    if(!secData) return;
+    sections[sk].items.forEach(it=>{
+      const saved = secData[it.id];
+      if(!saved) return;
+      Object.keys(saved).forEach(k=>{ state[sk][it.id][k] = saved[k]; });
+      migrateGroups(state[sk][it.id]);
+      // сбрасываем временные поля, чтобы не «залипло» открытое состояние
+      state[sk][it.id].expanded = false;
+      state[sk][it.id].draft = null;
+      state[sk][it.id].thinking = false;
+      state[sk][it.id].chatVisible = false;
+    });
+  });
+  return true;
+}
+
+function saveToStorage(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(collectState())); }
+  catch(e){ /* приватный режим или переполнение — молча пропускаем */ }
+}
+function loadFromStorage(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    return applyState(JSON.parse(raw));
+  }catch(e){ return false; }
+}
+
+// ---------- скачивание файла ----------
+function downloadJson(obj, filename){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+// ---------- промежуточное сохранение ----------
+function saveProgress(){
+  saveToStorage();
+  downloadJson(collectState(), `declaration-250-draft-${reportYear}.json`);
+}
+
+// ---------- импорт ранее сохраненного файла ----------
+function importProgress(){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.onchange = () => {
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if(!data.sections) throw new Error("не тот формат");
+        askConfirm({
+          title: "Загрузить данные из файла?",
+          text: "Текущие данные будут заменены.",
+          okLabel: "Загрузить",
+          onConfirm(){ applyState(data); saveToStorage(); navigate("home"); }
+        });
+      }catch(e){
+        alert("Не удалось прочитать файл. Убедитесь, что это черновик, сохраненный на этом сайте.");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ================== ФОРМИРОВАНИЕ JSON ДЛЯ ИСНД ==================
+
+const num = v => Math.round(Number(String(v).replace(",", ".")) || 0);
+const pad2 = i => String(i + 1).padStart(2, "0");
+
+// коды видов недвижимости (графа B приложения 250.01)
+const REALESTATE_CODES = {
+  "Жилое имущество (дом, дача, квартира)": "1",
+  "Нежилая недвижимость (коммерческая недвижимость, парковочное место, гараж, складское помещение и т.п.)": "2",
+  "Земельный участок": "3",
+  "Иное": "4",
+};
+
+// разворачиваем сгруппированные данные обратно в плоские строки со страной
+function flatten(sectionKey, itemId){
+  const st = state[sectionKey][itemId];
+  const out = [];
+  // строку, где не заполнено ни одно поле, в декларацию не выгружаем
+  const notEmpty = r => Object.keys(r).some(k => String(r[k] == null ? "" : r[k]).trim() !== "");
+  (st.groups || []).forEach(g=>{
+    if(g.mids){
+      g.mids.forEach(m=>(m.rows || []).filter(notEmpty)
+        .forEach(r=>out.push(Object.assign({}, r, {_group:g.gval, _mid:m}))));
+    } else {
+      (g.rows || []).filter(notEmpty).forEach(r=>out.push(Object.assign({}, r, {_group:g.gval})));
+    }
+  });
+  return out;
+}
+const included = (sk, id) => state[sk][id].decision === "include";
+
+function buildIsndJson(){
+  const asOf = asOfDate(); // 31.12.YYYY
+
+  // --- Приложение 1: недвижимость и транспорт ---
+  const realEstate = included("property","realestate") ? flatten("property","realestate").map((r,i)=>({
+    A: pad2(i), B: REALESTATE_CODES[r.kind] || "4", C: r._group || "",
+    D: r.cadastral || "", E: r.address || "",
+    _other: r.kind === "Иное" ? (r.kindOther || "") : "",
+    index: i, result_B: r.kind || "",
+  })) : [];
+  const vehicles = included("property","vehicle") ? flatten("property","vehicle").map((r,i)=>({
+    A: pad2(i), B: r.kind || "", C: r.model || "", D: r._group || "",
+    E: r.regNumber || "", F: r.vin || "", index: i,
+  })) : [];
+
+  // --- Приложение 2: деньги в иностранных банках (агрегируем по банку и валюте) ---
+  let bankRows = [];
+  if(included("money","accounts")){
+    const acc = new Map();
+    flatten("money","accounts").forEach(r=>{
+      const bankId = (r._mid && r._mid.bankId) || "";
+      const bankName = (r._mid && r._mid.bankName) || "";
+      const key = `${bankId}|${r.currency}|${r._group}`;
+      if(!acc.has(key)) acc.set(key, {bankId, bankName, country:r._group, currency:r.currency, sum:0});
+      acc.get(key).sum += Number(String(r.amount).replace(",", ".")) || 0;
+    });
+    bankRows = [...acc.values()].map((r,i)=>({
+      A: pad2(i), B: r.bankId || "", C: r.bankName || "", D: r.country || "",
+      E: r.currency || "", F: Math.round(r.sum), index: i,
+    }));
+  }
+  const capitalRows = included("business","capital") ? flatten("business","capital").map((r,i)=>({
+    A: pad2(i), B: r.orgId || "", C: r.orgName || "", D: r._group || "",
+    // размер доли — число, до трех знаков после точки (в интерфейсе ИСНД показывается с запятой)
+    E: Number((Number(String(r.share).replace(",", ".")) || 0).toFixed(3)), index: i,
+  })) : [];
+
+  // --- Приложение 3: долевое строительство и золото ---
+  const constructionRows = included("property","construction") ? flatten("property","construction").map((r,i)=>({
+    A: pad2(i), B: r.devId || "", C: r.devName || "", D: r._group || "",
+    E: r.address || "", F: r.currency || "", G: num(r.amount), index: i,
+  })) : [];
+  const goldRows = included("money","gold") ? flatten("money","gold").map((r,i)=>({
+    A: pad2(i), B: num(r.weight), C: r._group || "", D: r.currency || "",
+    E: num(r.amount), index: i,
+  })) : [];
+
+  // --- Приложение 4: ценные бумаги, цифровые активы, брокерские счета ---
+  const securityRows = included("money","securities") ? flatten("money","securities").map((r,i)=>({
+    A: pad2(i), B: r.name || "", C: num(r.qty), D: r._group || "",
+    E: r.currency || "", F: Number(String(r.price).replace(",", ".")) || 0, index: i,
+  })) : [];
+  const digitalRows = included("money","digital") ? flatten("money","digital").map((r,i)=>({
+    A: pad2(i), B: r.name || "", C: Number(String(r.qty).replace(",", ".")) || 0, D: num(r.amountKzt),
+    E: r._group || "", F: r.wallet || "", index: i,
+  })) : [];
+  const brokerRows = included("money","brokerage") ? flatten("money","brokerage").map((r,i)=>({
+    A: pad2(i), B: Number(String(r.accountNo).replace(/\D/g, "")) || 0,
+    C: (r._mid && r._mid.brokerName) || "",
+    D: r._group || "", E: r.currency || "", F: num(r.amount), index: i,
+  })) : [];
+
+  // --- Приложение 5: интеллектуальная собственность ---
+  const ipRows = included("ip","ipobjects") ? flatten("ip","ipobjects").map((r,i)=>({
+    A: pad2(i), B: r.kind || "", C: r.docNumber || "", D: r._group || "",
+    E: r.regDate ? r.regDate.split("-").reverse().join(".") : "", index: i,
+  })) : [];
+
+  // --- Приложение 6: задолженность (три наши карточки — одна таблица формы) ---
+  const debtRows = [];
+  if(included("credits","bankloans")){
+    flatten("credits","bankloans").forEach(r=>debtRows.push({
+      B:"CREDIT", C:r.bankId || "", D:r.bankName || "", E:r._group || "",
+      F:r.currency || "", G:num(r.amount), H:r.basis || "",
+    }));
+  }
+  if(included("other","receivable")){
+    flatten("other","receivable").forEach(r=>debtRows.push({
+      B:"DEBT", C:r.personId || "", D:r.name || "", E:r._group || "",
+      F:r.currency || "", G:num(r.amount), H:r.basis || "",
+    }));
+  }
+  if(included("other","payable")){
+    flatten("other","payable").forEach(r=>debtRows.push({
+      B:"CREDIT", C:r.personId || "", D:r.name || "", E:r._group || "",
+      F:r.currency || "", G:num(r.amount), H:r.basis || "",
+    }));
+  }
+  const debts = debtRows.map((r,i)=>Object.assign({A:pad2(i)}, r, {index:i}));
+
+  // --- Раздел C основной формы: наличные ---
+  const cashRows = included("money","cash") ? (state.money.cash.rows || []).map((r,i)=>({
+    A: pad2(i), B: r.currency || "", C: num(r.amount), index: i,
+  })) : [];
+
+  // --- анкетирование ---
+  const survey = {
+    _01: included("property","realestate"), _02: included("property","vehicle"),
+    _03_A: included("money","accounts"), _03_B: false,
+    _04: included("business","capital"), _05: included("property","construction"),
+    _06: included("money","gold"), _07: included("money","securities"),
+    _08: included("money","digital"), _09: included("money","brokerage"),
+    _10: included("ip","ipobjects"), _11: false,
+    _12: included("credits","bankloans") || included("other","receivable") || included("other","payable"),
+    _13: false,
+  };
+
+  const selectedApplications = [];
+  if(realEstate.length || vehicles.length) selectedApplications.push("application_01");
+  if(bankRows.length || capitalRows.length) selectedApplications.push("application_02");
+  if(constructionRows.length || goldRows.length) selectedApplications.push("application_03");
+  if(securityRows.length || digitalRows.length || brokerRows.length) selectedApplications.push("application_04");
+  if(ipRows.length) selectedApplications.push("application_05");
+  if(debts.length) selectedApplications.push("application_06");
+
+  return {
+    taxpayerCode: profile.iin,
+    taxpayerNameRu: profile.nameRu, taxpayerNameKk: profile.nameRu,
+    taxpayerCategories: ["C"],
+    declarationTypes: [profile.declType || "PRIORITY"],
+    periodType: "YEAR", periodValue: null,
+    fnoYear: reportYear,
+    ogdCodeByResidence: "", ogdCodeByLocation: "",
+    currencyCode: "KZT",
+    creatorCode: profile.iin, creatorType: "FL",
+    creatorNameRu: profile.nameRu, creatorNameKk: profile.nameRu,
+    noticeNumber: profile.noticeNumber || "",
+    noticeDate: profile.noticeDate || null,
+    fnoContent: {
+      commonInfo: {
+        _3:false, _3_1:null, _4_1:profile.phone, _4_2:profile.email,
+        _6: profile.residency || "A",
+        selectedApplications, fileUpload:[],
+        date_taxpayerCategory_A:null, date_taxpayerCategory_B:null, date_taxpayerCategory_C:asOf,
+        taxpayerCategory_A:false, taxpayerCategory_B:false, taxpayerCategory_C:true,
+      },
+      taxpayerResponsibility: {
+        isResponsible:true, declarationDate:null,
+        fullNameOfHead: profile.nameRu, fullNameOfAuthorizedPerson:"",
+        fullNameOfEmployeeWhoAcceptedDeclaration:"", declarationReceiptDate:null,
+        declarationIncomingNumber:"", postmarkDate:null,
+      },
+      surveyIncomeAssetsAndLiabilities: survey,
+      cashInfoMoreThan_10000MRP: cashRows,
+      application_01: {realEstateInForeignCountry: realEstate, vehicleInForeignCountry: vehicles},
+      application_02: {
+        moneyOnForeignBankMoreThan_1000MRP: bankRows,          // раздел B а) — деньги на счетах
+        shareInForeignLegalEntityExcludingJSC: [],             // раздел B б) — антикоррупционное ограничение
+        participationInAuthorizedForeignCapital: capitalRows,  // раздел C — доля в уставном капитале
+      },
+      // имена полей подтверждены по реальному запросу ИСНД
+      application_03: {
+        participationInConstructionForeignRealEstate: constructionRows,
+        investmentGold: goldRows,
+      },
+      application_04: {
+        securitiesInfo: securityRows,
+        sharesInForeignCountry: digitalRows,   // цифровые активы (имя поля унаследовано от прежней формы)
+        ownershipOfForeignShares: brokerRows,  // деньги на брокерских счетах
+      },
+      application_05: {
+        intellectualPropertyInForeignCountry: ipRows,
+        otherAssetsAndLiabilities: [],
+      },
+      application_06: {
+        receivablePayableAccountsInForeignCountry: debts,
+        propertyTransferredTrustManagement: [],
+      },
+      beginDate: asOf,
+      type: "fno250",
+    },
+    revisionUid: (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()),
+    headTaxpayerCode: profile.iin,
+    taxpayerRnn: null, taxpayerType: "FL",
+    taxpayerNameEn: profile.nameRu, taxpayerNameQq: profile.nameRu,
+    creatorNameEn: profile.nameRu, creatorNameQq: profile.nameRu,
+  };
+}
+
+function finalExport(){
+  REQUIRED_PROFILE.forEach(f=>{ touchedProfile[f] = true; });
+  renderFinish(); // подсвечиваем незаполненные поля
+  const missing = [];
+  if(!profile.iin) missing.push("ИИН");
+  if(!profile.nameRu) missing.push("ФИО");
+  if(!profile.residency) missing.push("резидентство");
+  if(!profile.declType) missing.push("вид декларации");
+  if(profile.declType === "NOTICE" && !profile.noticeNumber) missing.push("номер уведомления");
+  if(missing.length){
+    alert("Заполните: " + missing.join(", "));
+    return;
+  }
+  const badFields = ["iin","email","phone"]
+    .map(f => profileError(f, profile[f]))
+    .filter(Boolean);
+  if(badFields.length){
+    alert("Проверьте данные:\n• " + badFields.join("\n• "));
+    return;
+  }
+  saveToStorage();
+  downloadJson(buildIsndJson(), `declaration-250-${reportYear}.json`);
+}
+
+// ---------- слайдер-превью на посадочной странице ----------
+const PREVIEW_CAPTIONS = [
+  "Бот объясняет простыми словами, что и когда нужно указывать",
+  "Загрузите справку из банка — бот сам подставит счета и суммы",
+  "Когда всё готово — скачайте файл и загрузите его на сайте налоговой",
+];
+let previewIndex = 0;
+function paintPreviewSlider(){
+  const track = document.getElementById("preview-track");
+  if(!track) return;
+  track.style.transform = `translateX(-${previewIndex * 100}%)`;
+  const cap = document.getElementById("preview-caption");
+  if(cap) cap.textContent = PREVIEW_CAPTIONS[previewIndex];
+  const dots = document.getElementById("preview-dots");
+  if(dots){
+    dots.innerHTML = PREVIEW_CAPTIONS.map((_, i)=>
+      `<button class="preview-dot ${i === previewIndex ? "preview-dot-active" : ""}" onclick="goPreviewSlide(${i})" aria-label="Слайд ${i+1}"></button>`
+    ).join("");
+  }
+}
+function previewSlide(delta){
+  previewIndex = (previewIndex + delta + PREVIEW_CAPTIONS.length) % PREVIEW_CAPTIONS.length;
+  paintPreviewSlider();
+}
+function goPreviewSlide(i){
+  previewIndex = i;
+  paintPreviewSlider();
+}
+paintPreviewSlider();
+
+loadFromStorage(); // восстанавливаем черновик из браузера
+render();
+</script>
+
+</body>
+</html>
