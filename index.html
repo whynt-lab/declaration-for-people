@@ -1935,6 +1935,18 @@ function optionsList(optionsType){
   if(optionsType === "country-foreign") return FOREIGN_COUNTRIES;
   return COUNTRIES;
 }
+// Экранирование перед подстановкой в HTML-атрибут. Значения приходят не только
+// с клавиатуры: часть — из распознавания банковских справок, часть — из
+// импортированного файла черновика. Кавычка в названии банка не должна
+// разваливать разметку, а тем более превращаться в исполняемый код.
+function esc(v){
+  return String(v == null ? "" : v)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function genericComboHTML(comboId, optionsType, currentCode, placeholder, onSelect, getValue){
   comboHandlers[comboId] = {onSelect, getValue, optionsType};
   const list = optionsList(optionsType);
@@ -1945,7 +1957,7 @@ function genericComboHTML(comboId, optionsType, currentCode, placeholder, onSele
     <div class="combo-wrap">
       <span class="combo-flag-slot" id="${comboId}-flag">${hasFlag ? flagImg(found.code) : ""}</span>
       <input id="${comboId}-input" class="form-cell combo-input ${hasFlag ? "has-flag" : ""}" type="text" autocomplete="off"
-        placeholder="${placeholder}" value="${label}"
+        placeholder="${esc(placeholder)}" value="${esc(label)}"
         oninput="genericComboSearch('${comboId}',this.value)"
         onfocus="genericComboSearch('${comboId}',this.value)"
         onblur="genericComboBlur('${comboId}')">
@@ -2323,7 +2335,7 @@ function gCell(sectionKey, itemId, path, f, row){
 
   let control;
   if(f.type === "select"){
-    const opts = f.options.map(o=>`<option value="${o}" ${o === val ? "selected" : ""}>${o}</option>`).join("");
+    const opts = f.options.map(o=>`<option value="${esc(o)}" ${o === val ? "selected" : ""}>${esc(o)}</option>`).join("");
     control = `<select id="${cellId}" class="form-cell ${invalid}"
       onchange="gUpdateRowRender('${sectionKey}','${itemId}',[${path}],'${f.key}',this.value)"
       onblur="onCellBlur('${cellId}',this.value)">
@@ -2342,14 +2354,14 @@ function gCell(sectionKey, itemId, path, f, row){
       <div class="cell-error" id="${comboId}-input-err">${cellErrorText(f, val, `${comboId}-input`)}</div></div>`;
   } else if(f.money){
     control = `<input id="${cellId}" class="form-cell ${invalid}" type="text" inputmode="decimal"
-      placeholder="${f.placeholder}" value="${formatMoney(val)}" data-raw="${val}"
+      placeholder="${esc(f.placeholder)}" value="${esc(formatMoney(val))}" data-raw="${esc(val)}"
       onfocus="this.value = this.dataset.raw || ''"
       oninput="moneyFieldInput(this,'${sectionKey}','${itemId}',[${path}],'${f.key}','${cellId}')"
       onblur="moneyFieldBlur(this,'${cellId}')">`;
   } else {
     const step = f.maxDecimals != null ? ` step="${f.maxDecimals ? "0." + "0".repeat(f.maxDecimals - 1) + "1" : "1"}"` : "";
     control = `<input id="${cellId}" class="form-cell ${invalid}" type="${f.type}"${step}
-      placeholder="${f.placeholder}" value="${val}"
+      placeholder="${esc(f.placeholder)}" value="${esc(val)}"
       oninput="gUpdateRow('${sectionKey}','${itemId}',[${path}],'${f.key}',this.value,'${cellId}')"
       onblur="onCellBlur('${cellId}',this.value)">`;
   }
@@ -2409,7 +2421,7 @@ function renderGroupedForm(sectionKey, itemId){
     // шапка группы
     const gComboId = `g-head-${sectionKey}-${itemId}-${gi}`;
     const groupField = cfg.groupType === "text"
-      ? `<input class="form-cell" type="text" placeholder="${cfg.groupPlaceholder || ""}" value="${group.gval || ""}"
+      ? `<input class="form-cell" type="text" placeholder="${esc(cfg.groupPlaceholder || "")}" value="${esc(group.gval || "")}"
            oninput="gUpdateGroup('${sectionKey}','${itemId}',${gi},this.value)">`
       : genericComboHTML(gComboId, cfg.groupType, group.gval, "Выберите страну",
           (code)=>{ state[sectionKey][itemId].groups[gi].gval = code; },
@@ -2456,7 +2468,7 @@ function renderGroupedForm(sectionKey, itemId){
                   <div class="acc-field-label">${mf.label}</div>
                   <div class="cell-with-error">
                     <input id="${cellId}" class="form-cell ${fi === 0 ? "acc-bank-name-input" : ""} ${err ? "cell-invalid" : ""}"
-                      type="text" placeholder="${mf.placeholder}" value="${raw}"
+                      type="text" placeholder="${esc(mf.placeholder)}" value="${esc(raw)}"
                       oninput="gUpdateMid('${sectionKey}','${itemId}',${gi},${mi},'${mf.key}',this.value,this)"
                       onblur="onCellBlur('${cellId}', this.value)">
                     <div class="cell-error" id="${cellId}-err">${err}</div>
@@ -2487,7 +2499,7 @@ function renderGroupedForm(sectionKey, itemId){
 
 function gGroupDraft(sectionKey, itemId, cfg){
   const field = cfg.groupType === "text"
-    ? `<input class="form-cell" type="text" placeholder="${cfg.groupPlaceholder || ""}" value="${state[sectionKey][itemId].draft.data.gval || ""}"
+    ? `<input class="form-cell" type="text" placeholder="${esc(cfg.groupPlaceholder || "")}" value="${esc(state[sectionKey][itemId].draft.data.gval || "")}"
          oninput="gUpdateDraft('${sectionKey}','${itemId}','gval',this.value)">`
     : genericComboHTML(`g-draft-${sectionKey}-${itemId}`, cfg.groupType,
         state[sectionKey][itemId].draft.data.gval || "", "Начните вводить название страны",
@@ -2533,7 +2545,7 @@ function gMidDraft(sectionKey, itemId, cfg){
       <div class="acc-draft-fields">
         ${cfg.mid.fields.map(mf=>`
           <input id="gmiddraft-${sectionKey}-${itemId}-${mf.key}" class="form-cell" type="text" placeholder="${mf.placeholder}"
-            value="${d.data[mf.key] || ""}"
+            value="${esc(d.data[mf.key] || "")}"
             oninput="gUpdateDraft('${sectionKey}','${itemId}','${mf.key}',this.value,this)">`).join("")}
       </div>
       <div class="acc-draft-actions">
@@ -2841,25 +2853,64 @@ async function callExtractProxy(mediaType, base64Data){
   return data;
 }
 
+// ---------- проверка того, что вернула модель ----------
+// Ответ приходит не от пользователя, а от распознавания чужого документа.
+// В форму декларации он попадать без проверки не должен: в справке может
+// оказаться текст, сбивающий модель, да и просто ошибка распознавания.
+const MAX_STATEMENT_ROWS = 50;      // счетов в одной справке столько не бывает
+const MAX_BANK_NAME_LEN = 200;
+const MAX_ACCOUNT_AMOUNT = 1e15;    // выше — заведомо сбой распознавания
+
+function cleanExtractedText(v, maxLen){
+  return String(v == null ? "" : v)
+    .replace(/[\u0000-\u001F\u007F]/g, " ")   // переводы строк и управляющие символы
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLen);
+}
+
+function validateExtraction(result){
+  if(!result || typeof result !== "object"){
+    return {balances: [], bankName: "", bankId: "", skipped: 0};
+  }
+  const known = new Set(CURRENCIES.map(c => c.code));
+  const list = Array.isArray(result.balances) ? result.balances : [];
+  const balances = [];
+  let skipped = Math.max(0, list.length - MAX_STATEMENT_ROWS);
+
+  list.slice(0, MAX_STATEMENT_ROWS).forEach(b=>{
+    if(!b || typeof b !== "object"){ skipped++; return; }
+    const currency = String(b.currency == null ? "" : b.currency).trim().toUpperCase();
+    if(!known.has(currency)){ skipped++; return; }          // валюта только из справочника
+    const amount = Number(String(b.amount == null ? "" : b.amount).replace(",", "."));
+    if(!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > MAX_ACCOUNT_AMOUNT){
+      skipped++; return;
+    }
+    balances.push({currency, amount});
+  });
+
+  const bankName = cleanExtractedText(result.bankName, MAX_BANK_NAME_LEN);
+  const innDigits = String(result.bankInn == null ? "" : result.bankInn).replace(/\D/g, "");
+  const bankId = innDigits.length === 10 ? innDigits : "";   // ИНН — ровно 10 цифр, иначе не берем
+
+  return {balances, bankName, bankId, skipped};
+}
+
 // ---------- применяем распознанное к состоянию раздела ----------
 function applyExtractionResult(sectionKey, itemId, gi, result){
   const st = state[sectionKey][itemId];
   const group = st.groups[gi];
-  const balances = Array.isArray(result.balances)
-    ? result.balances
-        .filter(b => b && b.currency && b.amount != null)
-        // округление и агрегация по валютам — уже происходят в buildIsndJson() при экспорте;
-        // здесь суммы оставляем как есть, точно как в документе — чтобы юзер мог свериться глазами
-        .map(b => ({currency: b.currency, amount: Number(b.amount) || 0}))
-        .filter(b => b.amount !== 0) // нулевые остатки не декларируются — подстраховка на случай, если модель всё же прислала ноль
-    : [];
+  const checked = validateExtraction(result);
+  // округление и агрегация по валютам происходят в buildIsndJson() при экспорте;
+  // здесь суммы оставляем как в документе — чтобы юзер мог свериться глазами
+  const balances = checked.balances;
   if(balances.length === 0){
     showToast("Не удалось распознать суммы на справке — попробуйте ввести вручную", "warn");
     return;
   }
 
-  let bankName = result.bankName || "Банк из справки";
-  let bankId = result.bankInn ? String(result.bankInn).replace(/\D/g, "") : "";
+  let bankName = checked.bankName || "Банк из справки";
+  let bankId = checked.bankId;
   const known = bankId && BANKS_RU.find(b => b.inn === bankId);
   if(known){ bankName = known.name; bankId = known.inn; }
 
@@ -2894,7 +2945,13 @@ function applyExtractionResult(sectionKey, itemId, gi, result){
   saveToStorage();
   renderSection(sectionKey);
   renderSidebar(sectionKey);
-  showToast(`Готово: ${bankName} — добавлено строк: ${balances.length}. Сверьте со справкой.`, "ok");
+  // О непринятых строках говорим прямо: молча потерять счет хуже, чем показать,
+  // что он был и его надо внести руками.
+  const tail = checked.skipped
+    ? ` Не удалось разобрать строк: ${checked.skipped} — проверьте справку и добавьте их вручную.`
+    : "";
+  showToast(`Готово: ${bankName} — добавлено строк: ${balances.length}. Сверьте со справкой.${tail}`,
+            checked.skipped ? "warn" : "ok");
 }
 
 // ---------- сам сценарий загрузки справки ----------
@@ -3030,7 +3087,7 @@ function renderFormFields(sectionKey, itemId){
         const cellId = `cell-${sectionKey}-${itemId}-${idx}-${f.key}`;
         html += `
           <td><input id="${cellId}" class="form-cell" type="text" inputmode="decimal"
-            placeholder="${f.placeholder}" value="${formatMoney(val)}" data-raw="${val}"
+            placeholder="${esc(f.placeholder)}" value="${esc(formatMoney(val))}" data-raw="${esc(val)}"
             onfocus="this.value = this.dataset.raw || ''"
             oninput="moneyFieldInputFlat(this,'${sectionKey}','${itemId}',${idx},'${f.key}')"
             onblur="this.value = formatMoney(this.dataset.raw)"></td>
@@ -3039,7 +3096,7 @@ function renderFormFields(sectionKey, itemId){
         const cellId = `cell-${sectionKey}-${itemId}-${idx}-${f.key}`;
         html += `
           <td><input id="${cellId}" class="form-cell" type="${f.type}" placeholder="${f.placeholder}"
-            value="${val}" ${f.readonly ? "readonly" : ""}
+            value="${esc(val)}" ${f.readonly ? "readonly" : ""}
             oninput="updateRowField('${sectionKey}','${itemId}',${idx},'${f.key}',this.value)"></td>
         `;
       }
@@ -3394,13 +3451,13 @@ function renderFinish(){
       <h3>Заполните ваши данные</h3>
       <div class="field-row">
         <div class="field"><label>ИИН</label>
-          <input type="text" inputmode="numeric" placeholder="000000000000" value="${profile.iin}"
+          <input type="text" inputmode="numeric" placeholder="000000000000" value="${esc(profile.iin)}"
             class="${profileFieldError('iin', profile.iin) ? 'cell-invalid' : ''}"
             oninput="updateProfileQuiet('iin',this.value,this)"
             onblur="onProfileBlur('iin',this.value,this)">
           <div class="cell-error" id="profile-err-iin">${profileFieldError('iin', profile.iin)}</div></div>
         <div class="field"><label>ФИО</label>
-          <input type="text" placeholder="Фамилия Имя Отчество" value="${profile.nameRu}"
+          <input type="text" placeholder="Фамилия Имя Отчество" value="${esc(profile.nameRu)}"
             class="${profileFieldError('nameRu', profile.nameRu) ? 'cell-invalid' : ''}"
             oninput="updateProfileQuiet('nameRu',this.value,this)"
             onblur="onProfileBlur('nameRu',this.value,this)">
@@ -3408,13 +3465,13 @@ function renderFinish(){
       </div>
       <div class="field-row">
         <div class="field"><label>Телефон</label>
-          <input type="text" inputmode="tel" placeholder="+7" value="${profile.phone}"
+          <input type="text" inputmode="tel" placeholder="+7" value="${esc(profile.phone)}"
             class="${profileFieldError('phone', profile.phone) ? 'cell-invalid' : ''}"
             oninput="updateProfileQuiet('phone',this.value,this)"
             onblur="onProfileBlur('phone',this.value,this)">
           <div class="cell-error" id="profile-err-phone">${profileFieldError('phone', profile.phone)}</div></div>
         <div class="field"><label>Email</label>
-          <input type="text" inputmode="email" placeholder="you@example.com" value="${profile.email}"
+          <input type="text" inputmode="email" placeholder="you@example.com" value="${esc(profile.email)}"
             class="${profileFieldError('email', profile.email) ? 'cell-invalid' : ''}"
             oninput="updateProfileQuiet('email',this.value,this)"
             onblur="onProfileBlur('email',this.value,this)">
@@ -3449,7 +3506,7 @@ function renderFinish(){
       ${profile.declType === "NOTICE" ? `
       <div class="field-row">
         <div class="field"><label>Номер уведомления</label>
-          <input type="text" placeholder="Номер из уведомления" value="${profile.noticeNumber}"
+          <input type="text" placeholder="Номер из уведомления" value="${esc(profile.noticeNumber)}"
             oninput="updateProfileQuiet('noticeNumber',this.value,this)"></div>
         <div class="field"><label>Дата уведомления</label>
           <input type="date" value="${profile.noticeDate || ""}"
