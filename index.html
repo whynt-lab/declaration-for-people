@@ -36,11 +36,19 @@
     color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
   }
   .topbar .icon-btn:hover{color:var(--ink);background:var(--bg);}
+  /* Выход из инструмента — намеренно не стрелка: стрелку легко перепутать
+     с возвратом к списку разделов, который живет внутри самого заполнения. */
+  .topbar .exit-btn{color:var(--muted);}
+  .topbar .exit-btn:hover{color:var(--ink);}
   .page-eyebrow{
     font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;
     letter-spacing:.05em;margin-bottom:6px;
   }
   .help-wrap{position:relative;display:inline-block;vertical-align:middle;margin-left:4px;}
+  /* Заголовок со знаком вопроса: inline-выравнивание кружка по базовой линии
+     крупного шрифта визуально роняет его вниз, поэтому центрируем явно. */
+  .title-with-help{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .title-with-help .help-wrap{margin-left:0;vertical-align:baseline;display:flex;}
   .help-btn{
     width:20px;height:20px;border-radius:50%;border:1px solid var(--border);background:var(--bg);
     color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;line-height:1;
@@ -416,6 +424,8 @@
   .field select{cursor:pointer;}
   .field input:disabled{background:#F2F3F1;color:var(--muted);}
   .final-cta{margin-top:20px;}
+  .final-cta-note{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
+  .final-cta-note a{color:var(--accent);}
   .warning-list{font-size:12.5px;color:var(--warn);margin-top:8px;}
 
   .hidden{display:none !important;}
@@ -569,11 +579,30 @@
   @keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
   .confirm-box{
     background:var(--surface);border-radius:12px;padding:22px;max-width:400px;width:100%;
-    box-shadow:0 12px 40px rgba(0,0,0,.22);animation:formPanelIn .16s ease;
+    box-shadow:0 12px 40px rgba(0,0,0,.22);animation:formPanelIn .16s ease;position:relative;
   }
+  .confirm-close{
+    position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:6px;
+    border:none;background:transparent;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .confirm-close:hover{background:var(--bg);color:var(--ink);}
   .confirm-title{font-size:15px;font-weight:700;margin-bottom:6px;}
   .confirm-text{font-size:13px;color:var(--muted);line-height:1.5;}
   .confirm-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+  /* Оверлей проверки «вы не робот». Показывается только если Turnstile решил
+     задать вопрос — в большинстве случаев проверка проходит молча и невидимо. */
+  .turnstile-overlay{
+    position:fixed;inset:0;z-index:600;background:rgba(27,36,32,.45);
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .turnstile-overlay.is-visible{display:flex;animation:overlayIn .12s ease;}
+  .turnstile-box{
+    background:var(--surface);border-radius:12px;padding:22px;max-width:360px;width:100%;
+    box-shadow:0 12px 40px rgba(0,0,0,.22);text-align:center;
+  }
+  .turnstile-hint{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+  .turnstile-mount{display:flex;justify-content:center;}
   .btn.confirm-danger{background:var(--warn);color:#fff;border-color:var(--warn);}
 
   /* ---------- всплывающее уведомление (распознавание справки) ---------- */
@@ -608,6 +637,7 @@
   }
   .sidebar-date{font-size:11.5px;color:var(--muted);padding:0 10px 12px;}
 </style>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
 <body>
 
@@ -702,14 +732,7 @@
     <div class="step-eyebrow">Форма №250</div>
     <div class="center-card">
     <a class="back-link" href="#" onclick="event.preventDefault();navigate('landing')">← Назад</a>
-    <div class="center-options">
-      <button class="option-card" onclick="navigate('disclaimer')">
-        <div class="option-title">Начать с нуля</div>
-      </button>
-      <button class="option-card" onclick="importProgress()">
-        <div class="option-title">Загрузить черновик</div>
-      </button>
-    </div>
+    <div class="center-options" id="start-options"></div>
   </div>
   </div>
 </div>
@@ -752,7 +775,7 @@
 </div>
 
 <div class="topbar">
-  <button class="icon-btn" onclick="navigate('landing')" title="Выйти на главную" aria-label="Выйти на главную">←</button>
+  <button class="btn exit-btn" onclick="exitToLanding()">Выйти</button>
   <div style="display:flex;gap:8px;">
     <button class="btn" onclick="importProgress()">Загрузить файл</button>
     <button class="btn primary" onclick="saveProgress()">Сохранить черновик</button>
@@ -762,8 +785,8 @@
 <!-- ============ HOME ============ -->
 <div id="view-home" class="home-wrap hidden">
   <div class="page-eyebrow">Форма декларации №250</div>
-  <h1>
-    Ваши активы на конец <span id="home-asof-year"></span> года
+  <h1 class="title-with-help">
+    <span>Ваши активы на конец <span id="home-asof-year"></span> года</span>
     <span class="help-wrap">
       <button class="help-btn" onclick="toggleHelp('asof-help')" aria-label="Почему эта дата?">?</button>
       <div class="info-popover hidden" id="asof-help-pop">
@@ -1002,10 +1025,15 @@ function withDate(text){
 // answered: null/true/false — первичный ответ на&nbsp;вопрос
 // decision: null/'include'/'exclude' — итоговое решение по&nbsp;разделу
 const state = {};
+// Одна точка правды о «пустом» разделе: используется и при первом запуске,
+// и при сбросе через «Начать с нуля» — чтобы состояния не разъехались.
+function blankItemState(){
+  return {expanded:false, everOpened:false, answered:null, decision:null, thinking:false, thinkToken:0, chatLog:[], rows:[], chatVisible:false, groups:[], draft:null};
+}
 sectionOrder.forEach(s=>{
   state[s] = {};
   sections[s].items.forEach(it=>{
-    state[s][it.id] = {expanded:false, everOpened:false, answered:null, decision:null, thinking:false, thinkToken:0, chatLog:[], rows:[], chatVisible:false, groups:[], draft:null};
+    state[s][it.id] = blankItemState();
   });
 });
 
@@ -1055,6 +1083,7 @@ function render(){
     showOnlyView("view-landing");
   } else if(hash === "start"){
     showOnlyView("view-start");
+    renderStartOptions();
   } else if(hash === "disclaimer"){
     showOnlyView("view-disclaimer");
   } else if(hash === "yearpick"){
@@ -2660,13 +2689,18 @@ function gRemoveRow(sectionKey, itemId, path){
   renderSidebar(sectionKey);
 }
 // ================== РАСПОЗНАВАНИЕ СПРАВОК ЧЕРЕЗ СВОЙ СЕРВЕР-ПРОКСИ ==================
-// Ключ Anthropic хранится на сервере (см. extract-worker.js), сюда, в код сайта,
+// Ключ OpenAI хранится на сервере (см. extract-worker.js), сюда, в код сайта,
 // он никогда не попадает. Браузер отправляет только файл справки на прокси-адрес
 // ниже и получает обратно уже готовый разбор — {bankName, bankInn, balances}.
 //
 // ВАЖНО: впишите сюда адрес после разворачивания extract-worker.js
 // (см. инструкцию в самом файле воркера, шаг wrangler deploy).
 let PROXY_URL = "https://bank-statement-proxy.lakomka.workers.dev";
+
+// Публичный ключ Turnstile (проверка «вы не робот»). В отличие от секретного,
+// этот ключ и должен лежать в коде страницы — он ничего не открывает сам по себе.
+// Берется в панели Cloudflare → Turnstile → нужный виджет → Site Key.
+const TURNSTILE_SITE_KEY = "0x4AAAAAAEjrVxcQHgQxsHOM";
 
 // ---------- всплывающее уведомление о ходе распознавания ----------
 function showToast(msg, type, sticky){
@@ -2711,17 +2745,91 @@ function fileToBase64(file){
   });
 }
 
-// ---------- запрос к своему серверу-прокси (не к Anthropic напрямую) ----------
+// ---------- проверка «вы не робот» перед обращением к серверу ----------
+// Токен одноразовый и живет несколько минут, поэтому берется заново на каждую
+// загрузку справки, а не один раз при открытии страницы.
+let _tsWidgetId = null;
+let _tsPending = null;
+
+function _tsOverlay(){
+  let el = document.getElementById("turnstile-overlay");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "turnstile-overlay";
+    el.className = "turnstile-overlay";
+    el.innerHTML = `
+      <div class="turnstile-box">
+        <div class="turnstile-hint">Короткая проверка, что справку загружает человек, а не программа.</div>
+        <div class="turnstile-mount" id="turnstile-mount"></div>
+      </div>`;
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function _tsShow(){ _tsOverlay().classList.add("is-visible"); }
+function _tsHide(){ _tsOverlay().classList.remove("is-visible"); }
+function _tsSettle(fn, arg){
+  const p = _tsPending;
+  _tsPending = null;
+  _tsHide();
+  if(p) p[fn](arg);
+}
+
+function turnstileReady(){
+  return new Promise((resolve, reject)=>{
+    const started = Date.now();
+    (function check(){
+      if(window.turnstile && typeof window.turnstile.render === "function"){ resolve(); return; }
+      if(Date.now() - started > 10000){ reject(new Error("Не удалось загрузить проверку безопасности")); return; }
+      setTimeout(check, 100);
+    })();
+  });
+}
+
+async function getTurnstileToken(){
+  if(TURNSTILE_SITE_KEY.includes("ВСТАВЬТЕ")){
+    throw new Error("Проверка безопасности еще не настроена (см. TURNSTILE_SITE_KEY)");
+  }
+  await turnstileReady();
+  _tsOverlay();
+
+  return new Promise((resolve, reject)=>{
+    _tsPending = {resolve, reject};
+    const guard = setTimeout(()=>{
+      if(_tsPending) _tsSettle("reject", new Error("Проверка безопасности не завершилась"));
+    }, 60000);
+    const done = (fn, arg)=>{ clearTimeout(guard); _tsSettle(fn, arg); };
+
+    if(_tsWidgetId === null){
+      _tsWidgetId = window.turnstile.render("#turnstile-mount", {
+        sitekey: TURNSTILE_SITE_KEY,
+        // виджет не показывается вообще, пока проверка проходит в фоне
+        appearance: "interaction-only",
+        language: "ru",
+        callback: (token)=> done("resolve", token),
+        "before-interactive-callback": ()=> _tsShow(),
+        "error-callback": ()=> done("reject", new Error("Проверка безопасности не прошла")),
+        "expired-callback": ()=> done("reject", new Error("Проверка безопасности истекла, попробуйте еще раз")),
+        "timeout-callback": ()=> done("reject", new Error("Проверка безопасности не завершилась")),
+      });
+    } else {
+      window.turnstile.reset(_tsWidgetId);
+    }
+  });
+}
+
+// ---------- запрос к своему серверу-прокси (не к OpenAI напрямую) ----------
 async function callExtractProxy(mediaType, base64Data){
   if(PROXY_URL.includes("ВСТАВЬТЕ-СВОЙ-АДРЕС")){
     throw new Error("Сервер распознавания ещё не настроен (см. extract-worker.js)");
   }
+  const turnstileToken = await getTurnstileToken();
   let resp;
   try{
     resp = await fetch(PROXY_URL, {
       method: "POST",
       headers: {"content-type": "application/json"},
-      body: JSON.stringify({mediaType, base64: base64Data}),
+      body: JSON.stringify({mediaType, base64: base64Data, turnstileToken}),
     });
   }catch(e){
     throw new Error("Не удалось связаться с сервером распознавания");
@@ -2769,6 +2877,13 @@ function applyExtractionResult(sectionKey, itemId, gi, result){
   // (например, не распознанный ИНН) остаются невидимыми, пока пользователь сам
   // не кликнет в каждое поле; так пропуск подсветится сразу на первом же рендере
   const mi = group.mids.indexOf(mid);
+  // Драфт «добавить банк» открывается автоматически сразу после добавления страны.
+  // Загрузка справки добавляет банк в обход драфта, и если его не закрыть, он
+  // остается висеть — а пока он открыт, скрыты обе кнопки: и «добавить банк»
+  // в этой стране, и «добавить страну» внизу формы.
+  if(st.draft && st.draft.level === "mid" && st.draft.gi === gi){
+    st.draft = null;
+  }
   touchedCells[`gmid-${sectionKey}-${itemId}-${gi}-${mi}-bankName`] = true;
   touchedCells[`gmid-${sectionKey}-${itemId}-${gi}-${mi}-bankId`] = true;
   mid.rows.forEach((row, ri)=>{
@@ -2808,18 +2923,25 @@ function askConfirm(opts){
   el.className = "confirm-overlay";
   el.innerHTML = `
     <div class="confirm-box" role="dialog" aria-modal="true">
+      ${opts.showClose ? `<button class="confirm-close" id="confirm-close" aria-label="Закрыть">×</button>` : ""}
       <div class="confirm-title">${opts.title}</div>
       ${opts.text ? `<div class="confirm-text">${opts.text}</div>` : ""}
       <div class="confirm-actions">
-        <button class="btn" id="confirm-no">${opts.cancelLabel || "Отмена"}</button>
-        <button class="btn confirm-danger" id="confirm-yes">${opts.okLabel || "Удалить"}</button>
+        ${opts.hideCancel ? "" : `<button class="btn" id="confirm-no">${opts.cancelLabel || "Отмена"}</button>`}
+        ${opts.extraLabel ? `<button class="btn" id="confirm-extra">${opts.extraLabel}</button>` : ""}
+        <button class="btn ${opts.danger === false ? "primary" : "confirm-danger"}" id="confirm-yes">${opts.okLabel || "Удалить"}</button>
       </div>
     </div>
   `;
   document.body.appendChild(el);
   const close = () => el.remove();
-  el.querySelector("#confirm-no").onclick = close;
+  const no = el.querySelector("#confirm-no");
+  if(no) no.onclick = close;
+  const closeBtn = el.querySelector("#confirm-close");
+  if(closeBtn) closeBtn.onclick = close;
   el.querySelector("#confirm-yes").onclick = () => { close(); opts.onConfirm(); };
+  const extra = el.querySelector("#confirm-extra");
+  if(extra) extra.onclick = () => { close(); opts.onExtra(); };
   el.onclick = e => { if(e.target === el) close(); };      // клик по фону закрывает
   document.addEventListener("keydown", function esc(e){     // Esc тоже закрывает
     if(e.key === "Escape"){ close(); document.removeEventListener("keydown", esc); }
@@ -3336,7 +3458,10 @@ function renderFinish(){
     </div>
 
     <div class="final-cta">
-      <button class="btn primary" ${allReady ? "" : "disabled style='opacity:.5;cursor:not-allowed;'"} onclick="finalExport()">Сформировать декларацию для ИСНД</button>
+      <button class="btn primary" ${allReady ? "" : "disabled style='opacity:.5;cursor:not-allowed;'"} onclick="finalExport()">Сформировать декларацию</button>
+      <div class="final-cta-note">
+        Файл в&nbsp;формате для загрузки в&nbsp;Кабинете налогоплательщика — <a href="https://knp.kgd.gov.kz" target="_blank" rel="noopener">knp.kgd.gov.kz</a>
+      </div>
       ${!allReady ? `<div class="warning-list">Сначала исправьте разделы с&nbsp;пометкой «Есть пропуски» выше.</div>` : ""}
     </div>
   `;
@@ -3484,6 +3609,74 @@ function downloadJson(obj, filename){
   document.body.appendChild(a); a.click();
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+// ---------- начать заново ----------
+// «Начать с нуля» должно значить именно это: иначе после выхода и повторного
+// входа человек увидит свои старые ответы под кнопкой, обещавшей чистый лист.
+function hasSavedProgress(){
+  try{ return !!localStorage.getItem(STORAGE_KEY); }
+  catch(e){ return false; }
+}
+
+function resetAllData(){
+  sectionOrder.forEach(sk=>{
+    sections[sk].items.forEach(it=>{ state[sk][it.id] = blankItemState(); });
+  });
+  Object.keys(profile).forEach(k=>{ profile[k] = ""; });
+  Object.keys(touchedCells).forEach(k=>{ delete touchedCells[k]; });
+  Object.keys(touchedProfile).forEach(k=>{ delete touchedProfile[k]; });
+  try{ localStorage.removeItem(STORAGE_KEY); }
+  catch(e){ /* приватный режим — данных там и не было */ }
+}
+
+function startFresh(){
+  if(!hasSavedProgress()){ navigate("disclaimer"); return; }
+  askConfirm({
+    title: "Начать с нуля?",
+    text: "В этом браузере осталась начатая декларация. Если начать с нуля, она удалится без возможности вернуть.",
+    hideCancel: true,
+    showClose: true,
+    extraLabel: "Продолжить начатое",
+    okLabel: "Начать с нуля",
+    onExtra(){ navigate("home"); },
+    onConfirm(){ resetAllData(); navigate("disclaimer"); }
+  });
+}
+
+// Экран выбора: «Продолжить» показываем только если в браузере правда что-то есть
+function renderStartOptions(){
+  const box = document.getElementById("start-options");
+  if(!box) return;
+  box.innerHTML = `
+    ${hasSavedProgress() ? `
+      <button class="option-card" onclick="navigate('home')">
+        <div class="option-title">Продолжить</div>
+        <div class="option-sub">В этом браузере сохранена начатая декларация</div>
+      </button>` : ""}
+    <button class="option-card" onclick="startFresh()">
+      <div class="option-title">Начать с нуля</div>
+    </button>
+    <button class="option-card" onclick="importProgress()">
+      <div class="option-title">Загрузить черновик</div>
+    </button>
+  `;
+}
+
+// ---------- выход из режима заполнения ----------
+// Данные не пропадают: они лежат в этом браузере и подхватятся при следующем
+// открытии сайта. Но браузер — ненадежное хранилище (чистка истории, другое
+// устройство, приватное окно), поэтому предлагаем сохранить черновик файлом.
+function exitToLanding(){
+  askConfirm({
+    title: "Выйти из заполнения?",
+    text: "Заполненное останется в этом браузере, но браузер может его потерять. Надежнее сначала скачать черновик — кнопка «Сохранить черновик» рядом.",
+    hideCancel: true,
+    showClose: true,
+    okLabel: "Выйти",
+    danger: false,
+    onConfirm(){ navigate("landing"); }
+  });
 }
 
 // ---------- промежуточное сохранение ----------
