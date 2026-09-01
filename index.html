@@ -40,6 +40,10 @@
      с возвратом к списку разделов, который живет внутри самого заполнения. */
   .topbar .exit-btn{color:var(--muted);}
   .topbar .exit-btn:hover{color:var(--ink);}
+  .app-privacy-line{
+    text-align:center;font-size:12px;color:var(--muted);
+    padding:8px 20px;background:var(--accent-soft);border-bottom:1px solid var(--border);
+  }
   .page-eyebrow{
     font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;
     letter-spacing:.05em;margin-bottom:6px;
@@ -343,9 +347,7 @@
     animation:formPanelIn .2s ease;
   }
   .acc-draft-title{font-size:13px;font-weight:600;margin-bottom:10px;}
-  .acc-draft-flat{
-    border:none;background:none;padding:14px 0 0;margin:0;max-width:none;box-shadow:none;
-  }
+  .acc-draft-flat{max-width:none;}
   .acc-draft-fields{display:flex;gap:8px;flex-wrap:wrap;}
   .acc-draft-fields>*{flex:1;min-width:150px;}
   .acc-draft-actions{display:flex;gap:8px;margin-top:12px;}
@@ -372,7 +374,8 @@
   .combo-item:hover{background:var(--accent-soft);color:var(--accent);}
   .combo-item{display:flex;align-items:center;gap:8px;}
   .combo-item-name{flex:1;}
-  .bank-picker{position:relative;max-width:420px;}
+  .bank-picker-row{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px;}
+  .bank-picker{position:relative;flex:1;min-width:220px;max-width:420px;}
   .bank-item{display:flex;align-items:baseline;gap:10px;}
   .bank-item-name{flex:1;}
   .bank-item-inn{font-family:monospace;font-size:11px;color:var(--muted);white-space:nowrap;}
@@ -660,7 +663,6 @@
       а помощник подскажет, что вам заполнять.
     </p>
     <button class="btn primary landing-btn" onclick="navigate('start')">Начать →</button>
-    <div class="landing-privacy-line">🔒 Ваши данные остаются в браузере — мы их не храним</div>
   </div>
 
   <div class="landing-preview">
@@ -777,10 +779,10 @@
 <div class="topbar">
   <button class="btn exit-btn" onclick="exitToLanding()">Выйти</button>
   <div style="display:flex;gap:8px;">
-    <button class="btn" onclick="importProgress()">Загрузить файл</button>
     <button class="btn primary" onclick="saveProgress()">Сохранить черновик</button>
   </div>
 </div>
+<div class="app-privacy-line">🔒 Ваши ответы в безопасности — они никуда не передаются</div>
 
 <!-- ============ HOME ============ -->
 <div id="view-home" class="home-wrap hidden">
@@ -1069,10 +1071,13 @@ function showOnlyView(id){
     const el = document.getElementById(v);
     if(el) el.classList.toggle("hidden", v !== id);
   });
-  // шапка с «Сохранить прогресс» уместна только внутри самого инструмента,
-  // на посадочной/онбординге/выборе она отвлекает от главного действия на экране
+  // шапка с «Сохранить прогресс» и строка про приватность уместны только внутри
+  // самого инструмента, на посадочной/выборе они отвлекают от главного действия
+  const showHeader = id === "view-home" || id === "view-app";
   const topbar = document.querySelector(".topbar");
-  if(topbar) topbar.classList.toggle("hidden", id !== "view-home" && id !== "view-app");
+  if(topbar) topbar.classList.toggle("hidden", !showHeader);
+  const privacyLine = document.querySelector(".app-privacy-line");
+  if(privacyLine) privacyLine.classList.toggle("hidden", !showHeader);
 }
 
 function render(){
@@ -2444,9 +2449,6 @@ function renderGroupedForm(sectionKey, itemId){
             <div class="acc-banks-sub">${cfg.mid.blockSub}</div>
           </div>
           <div class="acc-banks-actions">
-            ${cfg.mid.allowUpload
-              ? `<button class="btn upload-stmt-btn" onclick="uploadBankStatement('${sectionKey}','${itemId}',${gi})">📄 Загрузить справку</button>`
-              : ""}
             ${!(draft && draft.level === "mid" && draft.gi === gi)
               ? `<button class="btn acc-add-bank-btn" onclick="gStartDraft('${sectionKey}','${itemId}','mid',${gi})">${cfg.mid.addLabel}</button>`
               : ""}
@@ -2519,17 +2521,24 @@ function gGroupDraft(sectionKey, itemId, cfg){
 
 function gMidDraft(sectionKey, itemId, cfg){
   const d = state[sectionKey][itemId].draft;
+
   // банк выбирается из справочника; для остальных случаев — ручной ввод
   if(cfg.mid.pickFromDirectory && !d.data._manual){
     const pickerId = `bankpick-${sectionKey}-${itemId}`;
     return `
       <div class="acc-draft acc-draft-flat">
-        <div class="bank-picker">
-          <input id="${pickerId}" class="form-cell" type="text" autocomplete="off"
-            placeholder="Начните вводить название банка"
-            oninput="bankSearch('${sectionKey}','${itemId}','${pickerId}',this.value)"
-            onfocus="bankSearch('${sectionKey}','${itemId}','${pickerId}',this.value)">
-          <div id="${pickerId}-list" class="combo-list"></div>
+        <div class="bank-picker-row">
+          <div class="bank-picker">
+            <input id="${pickerId}" class="form-cell" type="text" autocomplete="off"
+              placeholder="Начните вводить название банка"
+              oninput="bankSearch('${sectionKey}','${itemId}','${pickerId}',this.value)"
+              onfocus="bankSearch('${sectionKey}','${itemId}','${pickerId}',this.value)"
+              onblur="bankSearchBlur('${pickerId}')">
+            <div id="${pickerId}-list" class="combo-list"></div>
+          </div>
+          ${cfg.mid.allowUpload
+            ? `<button class="btn upload-stmt-btn" onclick="gUploadFromDraft('${sectionKey}','${itemId}')">📄 Заполнить из справки</button>`
+            : ""}
         </div>
         <button class="acc-add-link" onclick="bankManualMode('${sectionKey}','${itemId}')">
           Моего банка нет в списке — ввести вручную
@@ -2583,6 +2592,13 @@ function bankSearch(sectionKey, itemId, pickerId, query){
   }
   listEl.style.display = "block";
 }
+// закрываем список банков при уходе с поля; задержка — чтобы клик по варианту (onmousedown) успел сработать раньше blur
+function bankSearchBlur(pickerId){
+  setTimeout(()=>{
+    const listEl = document.getElementById(`${pickerId}-list`);
+    if(listEl) listEl.style.display = "none";
+  }, 150);
+}
 
 // выбрали банк — сразу добавляем его вместе с ИНН
 function bankPick(sectionKey, itemId, inn){
@@ -2599,6 +2615,13 @@ function bankManualMode(sectionKey, itemId){
   const d = state[sectionKey][itemId].draft;
   if(d) d.data._manual = true;
   renderSection(sectionKey);
+}
+
+function gUploadFromDraft(sectionKey, itemId){
+  const d = state[sectionKey][itemId].draft;
+  const gi = d ? d.gi : null;
+  gCancelDraft(sectionKey, itemId); // черновик закрываем — дальше ведёт сама загрузка справки
+  if(gi != null) uploadBankStatement(sectionKey, itemId, gi);
 }
 
 function gStartDraft(sectionKey, itemId, level, gi){
