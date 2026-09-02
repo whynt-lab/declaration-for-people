@@ -3030,13 +3030,22 @@ function validateExtraction(result){
     return {balances: [], bankName: "", bankId: "", skipped: 0};
   }
   const known = new Set(CURRENCIES.map(c => c.code));
+  // старые справки иногда используют коды валют, отменённые к текущему классификатору —
+  // приводим их к актуальным, а не отбрасываем молча
+  const LEGACY_CURRENCY = {RUR:"RUB", BYR:"BYN", MRO:"MRU", STD:"STN", VEF:"VES", VED:"VES"};
+  // на случай, если модель всё же вернёт название валюты словом, а не кодом
+  const NAMED_CURRENCY = {
+    "РОССИЙСКИЙРУБЛЬ":"RUB", "РУБЛЬ":"RUB", "РУБ":"RUB",
+    "ЕВРО":"EUR", "ДОЛЛАРСША":"USD", "ДОЛЛАР":"USD", "ЮАНЬ":"CNY", "ТЕНГЕ":"KZT",
+  };
   const list = Array.isArray(result.balances) ? result.balances : [];
   const balances = [];
   let skipped = Math.max(0, list.length - MAX_STATEMENT_ROWS);
 
   list.slice(0, MAX_STATEMENT_ROWS).forEach(b=>{
     if(!b || typeof b !== "object"){ skipped++; return; }
-    const currency = String(b.currency == null ? "" : b.currency).trim().toUpperCase();
+    let currency = String(b.currency == null ? "" : b.currency).trim().toUpperCase();
+    currency = LEGACY_CURRENCY[currency] || NAMED_CURRENCY[currency.replace(/\s+/g, "")] || currency;
     if(!known.has(currency)){ skipped++; return; }          // валюта только из справочника
     const amount = Number(String(b.amount == null ? "" : b.amount).replace(",", "."));
     if(!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > MAX_ACCOUNT_AMOUNT){
