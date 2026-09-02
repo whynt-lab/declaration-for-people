@@ -465,6 +465,7 @@
   .field select{cursor:pointer;}
   .field input:disabled{background:#F2F3F1;color:var(--muted);}
   .final-cta{margin-top:20px;}
+  .final-cta .btn{margin-right:8px;margin-bottom:8px;}
   .final-cta-note{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
   .final-cta-note a{color:var(--accent);}
   .warning-list{font-size:12.5px;color:var(--warn);margin-top:8px;}
@@ -962,7 +963,7 @@ const sections = {
         hint:"Любая недвижимость, зарегистрированная лично на&nbsp;вас. Жилье, земля, коммерческие объекты и&nbsp;другое. Недвижимость, зарегистрированная на&nbsp;супруга или&nbsp;супругу, сюда не&nbsp;входит — только то, что оформлено на&nbsp;вас лично.",
         recommendYes:[
           "Сюда входит: земельный участок, дом, дача, квартира, апартаменты, кладовая, гараж, офис, парковочное место, коммерческое здание. Если такой объект за&nbsp;рубежом — его нужно указать, независимо от&nbsp;стоимости.",
-          {type:"tip", text:"Если недвижимость в&nbsp;России, все данные о&nbsp;ней можно увидеть в&nbsp;личном кабинете на&nbsp;сайте налоговой.", link:"/guides/real-estate.pdf"},
+          {type:"tip", text:"Если недвижимость в&nbsp;России, зайдите на&nbsp;Госуслуги в&nbsp;раздел «Документы». Там можно скопировать все данные о&nbsp;недвижимости для декларации.", link:"nedvizhimost-gosuslugi.html"},
           "Хотите внести сведения о&nbsp;недвижимости в&nbsp;декларацию?"
         ]
       },
@@ -970,7 +971,7 @@ const sections = {
         hint:"Любой транспорт, зарегистрированный лично на&nbsp;вас. Машина, мотоцикл и&nbsp;другое.",
         recommendYes:[
           "Сюда входит: легковой автомобиль, мотоцикл, прицеп, квадроцикл, снегоход. Если он&nbsp;зарегистрирован за&nbsp;рубежом — нужно указать, независимо от&nbsp;стоимости.",
-          {type:"tip", text:"Если у&nbsp;вас несколько машин в&nbsp;России, все они видны сразу в&nbsp;личном кабинете на&nbsp;сайте налоговой — не&nbsp;нужно искать каждый СТС отдельно.", link:"/guides/vehicles.pdf"},
+          {type:"tip", text:"Если транспорт в&nbsp;России, зайдите на&nbsp;Госуслуги в&nbsp;раздел «Документы». Там можно скопировать все данные о&nbsp;транспорте для декларации.", link:"transport-gosuslugi.html"},
           "Хотите внести сведения о&nbsp;транспорте в&nbsp;декларацию?"
         ]
       },
@@ -3792,12 +3793,13 @@ function renderFinish(){
 
     <div class="final-cta">
       <button class="btn primary" ${canGenerate ? "" : "disabled style='opacity:.5;cursor:not-allowed;'"} onclick="finalExport()">Сформировать декларацию</button>
+      ${hasDeclarationGenerated() ? `<button class="btn" onclick="showSubmitInstructions()">Как загрузить файл в&nbsp;налоговую →</button>` : ""}
       <div class="final-cta-note">
         Файл в&nbsp;формате для загрузки в&nbsp;Кабинете налогоплательщика — <a href="https://knp.kgd.gov.kz" target="_blank" rel="noopener">knp.kgd.gov.kz</a>
       </div>
       ${!anyIncluded ? `<div class="warning-list">Сначала отметьте хотя бы один раздел, который нужно включить в&nbsp;декларацию.</div>` : ""}
       ${anyIncluded && hasHardBlock ? `<div class="warning-list">Сначала исправьте разделы с&nbsp;пометкой «Есть пропуски» выше — там начат ввод данных, но не хватает обязательных полей.</div>` : ""}
-      ${canGenerate && notReviewed.length ? `<div class="warning-list warning-list-soft">Не все разделы просмотрены (${esc(notReviewed.join(", "))}) — это не помешает сформировать декларацию, но стоит проверить, не забыли ли вы что-то.</div>` : ""}
+      ${canGenerate && notReviewed.length ? `<div class="warning-list warning-list-soft">Не все разделы просмотрены (${notReviewed.join(", ")}) — это не помешает сформировать декларацию, но стоит проверить, не забыли ли вы что-то.</div>` : ""}
     </div>
   `;
   content.innerHTML = html;
@@ -4307,7 +4309,9 @@ function finalExport(){
   const proceed = () => {
     saveToStorage();
     downloadJson(buildIsndJson(), `declaration-250-${reportYear}.json`);
+    setDeclarationGenerated(); // запоминаем: инструкцию теперь можно открыть кнопкой в любой момент
     showSubmitInstructions();
+    renderFinish(); // чтобы кнопка появилась сразу, без повторного захода на экран
   };
 
   if(notReviewed.length){
@@ -4324,6 +4328,15 @@ function finalExport(){
 }
 
 // ---------- инструкция «что делать дальше» после скачивания файла ----------
+// ---------- «декларация уже формировалась» — чтобы кнопка инструкции оставалась доступной ----------
+const DECLARATION_GENERATED_KEY = "declarationGenerated";
+function hasDeclarationGenerated(){
+  try{ return localStorage.getItem(DECLARATION_GENERATED_KEY) === "1"; }catch(e){ return false; }
+}
+function setDeclarationGenerated(){
+  try{ localStorage.setItem(DECLARATION_GENERATED_KEY, "1"); }catch(e){}
+}
+
 function showSubmitInstructions(){
   const old = document.getElementById("submit-instructions-overlay");
   if(old) old.remove();
