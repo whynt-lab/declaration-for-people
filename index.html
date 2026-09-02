@@ -109,10 +109,28 @@
   .finish-cta .label{font-size:13px;color:#B9C4BE;}
 
   /* ---------- app layout with sidebar ---------- */
-  .app-layout{display:flex;min-height:calc(100vh - 49px);}
+  .app-layout{display:flex;min-height:calc(100vh - 49px);position:relative;}
   .sidebar{
     width:var(--sidebar-w);flex-shrink:0;background:var(--surface);
     border-right:1px solid var(--border);padding:16px 10px;
+  }
+  .sidebar-toggle{display:none;}
+  .sidebar-overlay{display:none;}
+  /* на узких экранах сайдбар+контент не помещаются рядом — превращаем сайдбар
+     в выезжающую панель поверх контента, а не пытаемся сжать всё в один ряд */
+  @media(max-width:900px){
+    .sidebar-toggle{display:flex;}
+    .sidebar{
+      position:fixed;top:49px;left:0;bottom:0;z-index:120;width:280px;max-width:85vw;
+      transform:translateX(-100%);transition:transform .2s ease;
+      box-shadow:6px 0 24px rgba(0,0,0,.14);overflow-y:auto;
+    }
+    .sidebar.sidebar-open{transform:translateX(0);}
+    .sidebar-overlay{
+      display:block;position:fixed;top:49px;left:0;right:0;bottom:0;z-index:110;
+      background:rgba(27,36,32,.35);opacity:0;pointer-events:none;transition:opacity .2s ease;
+    }
+    .sidebar-overlay.sidebar-open{opacity:1;pointer-events:auto;}
   }
   .sidebar .back{
     font-size:13px;color:var(--muted);padding:8px 10px;display:block;margin-bottom:10px;
@@ -151,10 +169,14 @@
   .q-card-title{font-size:14px;font-weight:500;}
   .q-card-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
   .badge-icon{font-size:11px;line-height:1;}
-  .q-card-badge.notopened{background:#EEF0EE;color:var(--muted);}
+  .q-card-badge.notopened{background:#FBEAF3;color:#A8437E;}
   .q-card-badge.pending{background:var(--warn-soft);color:#A97A00;}
   .q-card-badge.waiting{background:#E6EEFB;color:#2A5DB0;}
   .q-card-badge.done{background:var(--ok-soft);color:var(--ok);}
+  .badge-dot{
+    display:inline-block;width:7px;height:7px;border-radius:50%;
+    background:#D0559E;flex-shrink:0;
+  }
   .collapse-btn{
     background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);
     font-size:11.5px;cursor:pointer;padding:4px 10px;white-space:nowrap;flex-shrink:0;
@@ -312,7 +334,7 @@
   }
   .acc-summary-bank-head{
     display:flex;align-items:flex-start;gap:10px;
-    padding:12px 14px;background:#F3F6F4;border-bottom:1px solid var(--border);
+    padding:12px 14px;background:#E7ECE8;border-bottom:1px solid var(--border);
     border-radius:9px 9px 0 0;
   }
   .acc-bank-field-name{flex:1;min-width:130px;}
@@ -348,6 +370,18 @@
   }
   .acc-draft-title{font-size:13px;font-weight:600;margin-bottom:10px;}
   .acc-draft-flat{max-width:none;}
+  .acc-draft-bankform{border:none;background:none;}
+  .acc-draft-or{
+    text-align:center;font-size:11.5px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.04em;margin:14px 0 10px;position:relative;
+  }
+  .acc-draft-or::before, .acc-draft-or::after{
+    content:"";position:absolute;top:50%;width:calc(50% - 20px);height:1px;background:var(--border);
+  }
+  .acc-draft-or::before{left:0;}
+  .acc-draft-or::after{right:0;}
+  .acc-upload-wide{width:100%;text-align:center;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
   .acc-draft-fields{display:flex;gap:8px;flex-wrap:wrap;}
   .acc-draft-fields>*{flex:1;min-width:150px;}
   .acc-draft-actions{display:flex;gap:8px;margin-top:12px;}
@@ -374,8 +408,12 @@
   .combo-item:hover{background:var(--accent-soft);color:var(--accent);}
   .combo-item{display:flex;align-items:center;gap:8px;}
   .combo-item-name{flex:1;}
-  .bank-picker-row{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px;}
-  .bank-picker{position:relative;flex:1;min-width:220px;max-width:420px;}
+  /* заливка полей ввода банка — та же серая подложка, что и у уже добавленного банка */
+  .acc-draft-bankhead{
+    display:flex;align-items:flex-start;gap:10px;
+    background:#E7ECE8;border-radius:8px;padding:12px 14px;margin-bottom:12px;
+  }
+  .bank-autocomplete{position:relative;}
   .bank-item{display:flex;align-items:baseline;gap:10px;}
   .bank-item-name{flex:1;}
   .bank-item-inn{font-family:monospace;font-size:11px;color:var(--muted);white-space:nowrap;}
@@ -430,6 +468,7 @@
   .final-cta-note{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
   .final-cta-note a{color:var(--accent);}
   .warning-list{font-size:12.5px;color:var(--warn);margin-top:8px;}
+  .warning-list-soft{color:var(--muted);}
 
   .hidden{display:none !important;}
 
@@ -439,111 +478,55 @@
     background:radial-gradient(ellipse 900px 500px at 50% -10%, var(--accent-soft), transparent);
   }
   .landing-topbar{
-    max-width:1040px;margin:0 auto 60px;display:flex;align-items:center;justify-content:space-between;
+    max-width:1200px;margin:0 auto 60px;display:flex;align-items:center;justify-content:space-between;
     flex-wrap:wrap;gap:12px;
   }
   .landing-logo{display:flex;align-items:center;gap:10px;}
   .landing-logo-text{display:flex;flex-direction:column;text-align:left;line-height:1.25;}
   .landing-logo-title{font-weight:600;font-size:16px;}
   .landing-logo-sub{font-size:11.5px;color:var(--muted);}
-  .landing-trust-badge{
-    display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);
-    background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:8px 14px;
+  .landing-hero-row{
+    max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:56px;
   }
-  .landing-hero{max-width:560px;margin:0 auto;text-align:center;}
-  .landing-hero h1{font-size:38px;line-height:1.2;margin:0 0 16px;font-weight:800;letter-spacing:-.01em;}
+  .landing-hero{flex:0 1 500px;min-width:0;}
+  .landing-hero h1{font-size:42px;line-height:1.18;margin:0 0 16px;font-weight:800;letter-spacing:-.01em;}
   .landing-accent{color:var(--accent);}
-  .landing-sub{font-size:15px;color:var(--muted);line-height:1.6;margin:0 auto 26px;max-width:460px;}
+  .landing-sub{font-size:15.5px;color:var(--muted);line-height:1.65;margin:0 0 26px;max-width:460px;}
   .landing-btn{
     padding:14px 34px;font-size:15px;font-weight:700;border-radius:12px;
     box-shadow:0 10px 24px rgba(47,111,94,.25);
   }
   .landing-privacy-line{
-    display:flex;align-items:center;justify-content:center;gap:6px;
+    display:flex;align-items:center;gap:6px;
     font-size:12px;color:var(--muted);margin-top:16px;
   }
+  /* картинка с примером карточки — справа от текста на широких экранах */
+  .landing-hero-image{flex:1 1 480px;min-width:0;max-width:620px;}
+  .landing-hero-svg{width:100%;height:auto;display:block;}
+  @media(max-width:900px){
+    .landing-hero-row{flex-direction:column;gap:36px;}
+    .landing-hero{max-width:520px;}
+    .landing-hero-image{width:100%;max-width:480px;}
+    .landing-hero h1{font-size:30px;}
+  }
+  .site-footer{
+    max-width:1200px;margin:40px auto 0;padding:20px 20px 40px;text-align:left;
+    border-top:1px solid var(--border);
+  }
+  .site-footer a{font-size:12.5px;color:var(--muted);}
+  .site-footer a:hover{color:var(--ink);}
+  .site-footer-dot{color:var(--border);margin:0 10px;font-size:12px;}
 
-  /* ---------- превью продукта под хиро-блоком: слайдер из трёх примеров ---------- */
-  .landing-preview{
-    max-width:760px;margin:56px auto 0;background:var(--surface);border:1px solid var(--border);
-    border-radius:18px;box-shadow:0 20px 50px rgba(27,36,32,.08);overflow:hidden;
-    padding:22px 0 26px;text-align:left;
-  }
-  .preview-caption{
-    text-align:center;font-size:13px;font-weight:600;color:var(--muted);
-    padding:0 24px 18px;min-height:20px;
-  }
-  .preview-slider{display:flex;align-items:center;gap:8px;padding:0 10px;}
-  .preview-arrow{
-    flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
-    background:var(--surface);color:var(--muted);font-size:18px;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;line-height:1;
-  }
-  .preview-arrow:hover{color:var(--ink);background:var(--bg);}
-  .preview-viewport{flex:1;overflow:hidden;}
-  .preview-track{display:flex;transition:transform .3s ease;}
-  .preview-slide{flex:0 0 100%;min-width:0;}
-  .preview-dots{display:flex;justify-content:center;gap:7px;margin-top:18px;}
-  .preview-dot{
-    width:7px;height:7px;border-radius:50%;background:var(--border);border:none;
-    cursor:pointer;padding:0;
-  }
-  .preview-dot-active{background:var(--accent);width:18px;border-radius:4px;}
-
-  .preview-card{padding:8px 28px 4px;}
-  .preview-card-eyebrow{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
-  .preview-card-q{font-size:16px;font-weight:600;margin-bottom:6px;line-height:1.4;}
-  .preview-card-hint{font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
-  .preview-switch{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px;}
-  .preview-switch-btn{padding:7px 20px;font-size:12.5px;color:var(--muted);}
-  .preview-switch-active{background:var(--accent);color:#fff;font-weight:600;}
-  .preview-bot-row{display:flex;gap:10px;align-items:flex-start;}
-  .preview-bot-avatar{
-    width:28px;height:28px;border-radius:50%;background:#E3ECF7;flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;font-size:13px;
-  }
-  .preview-bot-bubble{
-    background:#E3ECF7;color:#26456E;font-size:12.5px;line-height:1.5;
-    padding:10px 14px;border-radius:10px;
-  }
-
-  /* слайд 2: загрузка справки из банка */
-  .preview-bank-block{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;}
-  .preview-bank-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
-  .preview-bank-name{font-size:13.5px;font-weight:700;}
-  .preview-bank-inn{font-size:11px;color:var(--muted);}
-  .preview-bank-line{display:flex;align-items:baseline;gap:8px;font-size:13px;padding:3px 0;}
-  .preview-bank-line b{font-weight:700;}
-  .preview-bank-line span:last-child{color:var(--muted);font-size:11.5px;}
-  .preview-upload-row{display:flex;gap:8px;margin-bottom:14px;}
-  .preview-upload-btn, .preview-add-btn{
-    font-size:12px;padding:7px 12px;border-radius:7px;border:1px solid var(--border);
-  }
-  .preview-upload-btn{background:#E3ECF7;border-color:#C7D6EC;color:#26456E;}
-  .preview-add-btn{color:var(--muted);}
-  .preview-toast{
-    background:var(--ok-soft);color:var(--ok);font-size:12px;font-weight:600;
-    padding:10px 14px;border-radius:8px;
-  }
-
-  /* слайд 3: сохранение файла для налоговой */
-  .preview-card-center{text-align:center;padding-top:10px;padding-bottom:14px;}
-  .preview-file-icon{font-size:34px;margin-bottom:8px;}
-  .preview-file-name{
-    font-family:monospace;font-size:12.5px;color:var(--muted);background:var(--bg);
-    display:inline-block;padding:5px 10px;border-radius:6px;margin-bottom:16px;
-  }
-  .preview-file-steps{font-size:12.5px;color:var(--muted);line-height:1.9;margin-bottom:18px;}
-  .preview-download-btn{
-    display:inline-block;background:var(--accent);color:#fff;font-size:13px;font-weight:600;
-    padding:10px 20px;border-radius:9px;
-  }
-
-  @media(max-width:760px){
-    .landing-hero h1{font-size:28px;}
-    .preview-slider{padding:0 4px;}
-    .preview-card{padding:8px 16px 4px;}
-  }
+  /* ---------- условия использования ---------- */
+  .terms-wrap{min-height:100vh;padding:32px 20px 80px;}
+  .terms-page{max-width:640px;margin:0 auto;}
+  .terms-page h1{font-size:26px;margin:0 0 20px;}
+  .terms-page h2{font-size:18px;margin:32px 0 14px;}
+  .terms-page p{font-size:13.5px;line-height:1.65;color:var(--ink);margin:0 0 14px;}
+  .terms-page ul, .terms-page ol{font-size:13.5px;line-height:1.65;color:var(--ink);margin:0 0 14px;padding-left:22px;}
+  .terms-page li{margin-bottom:6px;}
+  .terms-page a{color:var(--accent);}
+  .terms-updated{color:var(--muted);font-size:12px;margin-top:28px;}
 
   /* ---------- экраны start / disclaimer / yearpick ---------- */
   .center-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -592,7 +575,12 @@
   .confirm-close:hover{background:var(--bg);color:var(--ink);}
   .confirm-title{font-size:15px;font-weight:700;margin-bottom:6px;}
   .confirm-text{font-size:13px;color:var(--muted);line-height:1.5;}
+  .confirm-text a{color:var(--accent);}
   .confirm-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+  .submit-instructions-box{max-width:440px;}
+  .submit-steps{margin:14px 0 0;padding-left:20px;font-size:13px;line-height:1.7;color:var(--ink);}
+  .submit-steps a{color:var(--accent);}
+  .submit-filename{font-family:monospace;font-size:12px;background:var(--bg);padding:2px 6px;border-radius:4px;}
   /* Оверлей проверки «вы не робот». Показывается только если Turnstile решил
      задать вопрос — в большинстве случаев проверка проходит молча и невидимо. */
   .turnstile-overlay{
@@ -644,6 +632,63 @@
 </head>
 <body>
 
+<!-- ============ ТЕРМС ============ -->
+<div id="view-terms" class="terms-wrap hidden">
+  <div class="terms-page">
+    <a class="back-link" href="#" onclick="event.preventDefault();navigate('landing')">← На главную</a>
+    <h1>Условия использования</h1>
+    <p>Открывая этот сайт и пользуясь помощником, вы соглашаетесь с тем, что написано ниже. Если не согласны — просто не пользуйтесь.</p>
+
+    <p><strong>1. Что это такое.</strong> Бесплатный помощник, который помогает разобраться в декларации по форме №250 и собрать файл для загрузки в Кабинет налогоплательщика. Это частный проект одного человека, а не компании. Он не является государственным сервисом и не связан с Комитетом государственных доходов.</p>
+
+    <p><strong>2. Мы не налоговые консультанты.</strong> Тексты на сайте — это объяснение правил простыми словами, а не индивидуальная налоговая консультация. Ваша ситуация может отличаться от типовой. Если сомневаетесь — обращайтесь в налоговую или к профессиональному консультанту.</p>
+
+    <p><strong>3. Решение остаётся за вами.</strong> Помощник подсказывает, что обычно нужно указывать. Но что именно попадёт в вашу декларацию, решаете вы. Ответственность за полноту и достоверность поданных сведений несёт декларант, то есть вы, — так устроен закон, и никакой сервис этого не меняет.</p>
+
+    <h2>4. Что происходит с вашими данными</h2>
+
+    <p><strong>4.1. Всё, что вы вводите руками, остаётся в браузере.</strong> Регистрации на сайте нет, серверной базы у нас тоже нет. ИИН, имя, счета, суммы — всё это хранится в памяти вашего браузера на вашем устройстве. Мы этого не видим.</p>
+    <p>Отсюда следует важное: браузер ненадёжен. Очистка истории, другое устройство, приватное окно — и заполненное пропадёт. Кнопка «Сохранить черновик» скачивает файл вам на устройство; этот файл тоже никуда не отправляется. Резервных копий у нас нет, восстановить ничего мы не сможем.</p>
+
+    <p><strong>4.2. Единственное исключение — загрузка справки из банка.</strong> Когда вы нажимаете «Загрузить справку», файл покидает браузер. Иначе распознать его невозможно. Происходит следующее:</p>
+    <ol>
+      <li>Браузер отправляет файл на наш промежуточный сервер (Cloudflare Workers). Он нужен только чтобы ключ доступа к распознаванию не лежал в открытом коде сайта.</li>
+      <li>Наш сервер передаёт файл сервису OpenAI (США). Модель читает справку и возвращает разобранный текст.</li>
+      <li>Обратно приходит только результат: название банка, его ИНН и строки «сумма — валюта».</li>
+      <li>Мы не сохраняем ни файл, ни результат.</li>
+    </ol>
+    <p>Что дальше происходит на стороне OpenAI, зависит от них, а не от нас. По их правилам данные, отправленные через API, не используются для обучения моделей, а запросы хранятся до 30 дней для контроля злоупотреблений и потом удаляются — дольше только если этого требует закон.</p>
+    <p>В справке обычно есть ваше имя, номера счетов и остатки, иногда ИИН или паспортные данные. Мы не знаем заранее, что в вашем файле, поэтому исходите из того, что документ уходит целиком, как есть.</p>
+    <p><strong>Если вас это не устраивает — не пользуйтесь загрузкой.</strong> Всё то же самое вводится руками, результат будет ровно тот же.</p>
+
+    <p><strong>4.3. Чего мы не делаем.</strong> Не заводим аккаунты. Не ставим аналитику — мы не знаем, сколько людей пользуется сайтом. Не показываем рекламу и не продаём данные. Не отправляем ничего в налоговую: готовый файл вы скачиваете и загружаете в Кабинет налогоплательщика сами. Никому, кроме описанного в 4.2, данные не передаём.</p>
+
+    <p><strong>4.4. Что видят сторонние сервисы.</strong> Как и на любом сайте, ваш IP-адрес видят хостинг (GitHub Pages), проверка «вы не робот» (Cloudflare Turnstile) и сервис иконок флагов (flagcdn.com). Того, что вы заполнили, не получает ни один из них.</p>
+
+    <p><strong>4.5. Как всё удалить.</strong> Нажмите «Начать с нуля», либо очистите данные сайта средствами браузера, либо просто откройте сайт в приватном окне — тогда после закрытия окна не останется ничего.</p>
+
+    <p><strong>5. Мы не даём гарантий.</strong> Сайт предоставляется «как есть». Мы стараемся, но не обещаем, что:</p>
+    <ul>
+      <li>правила на сайте всегда актуальны и полны — законодательство меняется;</li>
+      <li>помощник учитывает все возможные случаи;</li>
+      <li>распознавание справки сработает без ошибок — <strong>всегда сверяйте результат с оригиналом</strong>;</li>
+      <li>файл будет принят Кабинетом налогоплательщика без замечаний;</li>
+      <li>сайт будет доступен в любой момент.</li>
+    </ul>
+
+    <p><strong>6. Ограничение ответственности.</strong> Мы не отвечаем за убытки, штрафы, пени и любые другие последствия, возникшие в связи с использованием сайта, — включая ошибки в декларации, срыв сроков подачи, недоступность сайта и потерю введённых данных. Сервис бесплатный, и вы пользуетесь им на свой риск.</p>
+
+    <p><strong>7. Пользуйтесь по-человечески.</strong> Не пытайтесь ломать сайт, обходить проверки, автоматизировать массовые запросы к распознаванию. Не загружайте чужие документы без ведома их владельца.</p>
+
+    <p><strong>8. Мы можем менять сайт.</strong> Дорабатывать, менять условия или закрыть проект — без предупреждения и без обязательств перед вами.</p>
+
+    <p><strong>9. Право.</strong> К этим условиям применяется законодательство Республики Казахстан.</p>
+
+    <p>Вопросы: <a href="mailto:whynt.lab@gmail.com">whynt.lab@gmail.com</a></p>
+    <p class="terms-updated">Последнее изменение: 31 августа 2026 года</p>
+  </div>
+</div>
+
 <!-- ============ LANDING ============ -->
 <div id="view-landing" class="landing-wrap">
   <div class="landing-topbar">
@@ -653,78 +698,96 @@
         <span class="landing-logo-sub">электронная декларация</span>
       </span>
     </div>
-    <div class="landing-trust-badge">🛡 Формат, который принимает налоговая</div>
   </div>
 
-  <div class="landing-hero">
-    <h1>Декларация,<br>сделанная <span class="landing-accent">для людей</span></h1>
-    <p class="landing-sub">
-      Не нужно сами разбираться в налоговых формах. Отвечайте на простые вопросы,
-      а помощник подскажет, что вам заполнять.
-    </p>
-    <button class="btn primary landing-btn" onclick="navigate('start')">Начать →</button>
-  </div>
-
-  <div class="landing-preview">
-    <div class="preview-caption" id="preview-caption"></div>
-    <div class="preview-slider">
-      <button class="preview-arrow preview-arrow-left" onclick="previewSlide(-1)" aria-label="Предыдущий пример">‹</button>
-      <div class="preview-viewport">
-        <div class="preview-track" id="preview-track">
-
-          <div class="preview-slide">
-            <div class="preview-card">
-              <div class="preview-card-eyebrow">Деньги и инвестиции</div>
-              <div class="preview-card-q">Были ли у вас деньги на счетах в иностранных банках на 31.12.2025?</div>
-              <div class="preview-card-hint">Считаются карточные счета, текущие и накопительные счета, депозиты (вклады).</div>
-              <div class="preview-switch">
-                <span class="preview-switch-btn preview-switch-active">Да</span>
-                <span class="preview-switch-btn">Нет</span>
-              </div>
-              <div class="preview-bot-row">
-                <div class="preview-bot-avatar">🤖</div>
-                <div class="preview-bot-bubble">По правилам декларировать обязательно, если в сумме на них было больше 3 932 000 тенге — именно на дату 31.12.2025.</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="preview-slide">
-            <div class="preview-card">
-              <div class="preview-card-eyebrow">Счета в иностранных банках</div>
-              <div class="preview-bank-block">
-                <div class="preview-bank-head">
-                  <span class="preview-bank-name">АО «ТБанк»</span>
-                  <span class="preview-bank-inn">ИНН 7710140679</span>
-                </div>
-                <div class="preview-bank-line"><span>Сумма</span><b>393&nbsp;832,45</b><span>RUB</span></div>
-                <div class="preview-bank-line"><span>Сумма</span><b>772,40</b><span>EUR</span></div>
-              </div>
-              <div class="preview-upload-row">
-                <span class="preview-upload-btn">📄 Загрузить справку</span>
-                <span class="preview-add-btn">+ Добавить банк</span>
-              </div>
-              <div class="preview-toast">✅ Готово: АО «ТБанк» — добавлено строк: 2. Сверьте со справкой.</div>
-            </div>
-          </div>
-
-          <div class="preview-slide">
-            <div class="preview-card preview-card-center">
-              <div class="preview-file-icon">📄</div>
-              <div class="preview-file-name">declaration-250-2026.json</div>
-              <div class="preview-file-steps">
-                <div>1. Сформируйте файл в помощнике</div>
-                <div>2. Зайдите на сайт налоговой</div>
-                <div>3. Загрузите файл — готово</div>
-              </div>
-              <span class="preview-download-btn">⬇ Сформировать декларацию</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <button class="preview-arrow preview-arrow-right" onclick="previewSlide(1)" aria-label="Следующий пример">›</button>
+  <div class="landing-hero-row">
+    <div class="landing-hero">
+      <h1>Декларация,<br>сделанная <span class="landing-accent">для людей</span></h1>
+      <p class="landing-sub">
+        Не нужно разбираться в налоговых формах. Отвечайте на вопросы помощника —
+        и он подскажет, что заполнить.
+      </p>
+      <button class="btn primary landing-btn" onclick="navigate('start')">Сформировать бесплатно</button>
     </div>
-    <div class="preview-dots" id="preview-dots"></div>
+    <div class="landing-hero-image">
+<svg class="landing-hero-svg" xmlns="http://www.w3.org/2000/svg" width="1400" height="1200" viewBox="0 0 1400 1200" fill="none" role="img" aria-label="Пример карточки вопроса и распознанной банковской справки">
+<defs>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+    <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#17352E" flood-opacity="0.16"/>
+  </filter>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="170%">
+    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#17352E" flood-opacity="0.10"/>
+  </filter>
+  <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+    <stop stop-color="#FFFFFF"/>
+    <stop offset="1" stop-color="#FBFDFC"/>
+  </linearGradient>
+  <linearGradient id="mint" x1="0" y1="0" x2="1" y2="1">
+    <stop stop-color="#EFF9F5"/>
+    <stop offset="1" stop-color="#E3F3ED"/>
+  </linearGradient>
+</defs>
+
+<!-- Back card -->
+<g transform="translate(455 400) rotate(5 430 330)" filter="url(#soft)">
+  <rect x="0" y="0" width="820" height="650" rx="34" fill="url(#card)" stroke="#D9E2DE" stroke-width="2"/>
+  <circle cx="72" cy="78" r="34" fill="#E8F7F1"/>
+  <!-- document/upload icon -->
+  <path d="M60 55h20l12 12v34H60V55Z" stroke="#197C63" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M80 55v14h12M72 84v24M63 93l9-9 9 9" stroke="#197C63" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="125" y="70" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" fill="#172421">Загрузите справку из банка</text>
+  <text x="125" y="103" font-family="Inter, Arial, sans-serif" font-size="22" fill="#64756F">Данные распознаются автоматически</text>
+
+  <rect x="48" y="145" width="724" height="128" rx="20" fill="#fff" stroke="#CBD8D3" stroke-width="2" stroke-dasharray="8 8"/>
+  <path d="M402 176v42M384 194l18-18 18 18" stroke="#197C63" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="430" y="198" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700" fill="#197C63">Загрузить файл</text>
+  <text x="362" y="236" font-family="Inter, Arial, sans-serif" font-size="19" fill="#64756F">PDF, JPG или PNG до 10 МБ</text>
+
+  <circle cx="76" cy="327" r="20" fill="#269A78"/>
+  <path d="M66 327l7 7 14-16" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="112" y="337" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700" fill="#172421">Распознано из документа</text>
+
+  <rect x="48" y="375" width="724" height="205" rx="24" fill="#F4F8F6"/>
+  <rect x="76" y="402" width="50" height="50" rx="12" fill="#FFD21F"/>
+  <text x="91" y="439" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#172421">T</text>
+  <text x="150" y="426" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" fill="#172421">Т-Банк</text>
+  <text x="592" y="426" font-family="Inter, Arial, sans-serif" font-size="18" fill="#64756F">ИНН 7710140679</text>
+  <line x1="76" y1="472" x2="744" y2="472" stroke="#D6E0DC" stroke-width="2"/>
+  <text x="76" y="512" font-family="Inter, Arial, sans-serif" font-size="22" fill="#344740">Счет в RUB</text>
+  <text x="565" y="512" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#172421">393 832,45 ₽</text>
+  <text x="76" y="552" font-family="Inter, Arial, sans-serif" font-size="22" fill="#344740">Счет в EUR</text>
+  <text x="610" y="552" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#172421">772,40 €</text>
+</g>
+
+<!-- Front card -->
+<g transform="translate(80 95) rotate(-6 470 330)" filter="url(#shadow)">
+  <rect x="0" y="0" width="860" height="650" rx="36" fill="url(#card)" stroke="#D7E1DD" stroke-width="2"/>
+  <text x="56" y="72" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="800" letter-spacing="1" fill="#197C63">ДЕНЬГИ И ИНВЕСТИЦИИ</text>
+  <text x="56" y="128" font-family="Inter, Arial, sans-serif" font-size="35" font-weight="750" fill="#14221F">Были ли у вас деньги на счетах</text>
+  <text x="56" y="173" font-family="Inter, Arial, sans-serif" font-size="35" font-weight="750" fill="#14221F">в иностранных банках?</text>
+  <text x="56" y="220" font-family="Inter, Arial, sans-serif" font-size="22" fill="#64756F">Считаются карточные, текущие</text>
+  <text x="56" y="253" font-family="Inter, Arial, sans-serif" font-size="22" fill="#64756F">и накопительные счета, депозиты.</text>
+
+  <rect x="56" y="291" width="170" height="62" rx="14" fill="#218B6E"/>
+  <text x="126" y="331" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="700" fill="white">Да</text>
+  <rect x="226" y="291" width="170" height="62" rx="14" fill="white" stroke="#CBD8D3" stroke-width="2"/>
+  <text x="311" y="331" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="23" fill="#465852">Нет</text>
+
+  <rect x="56" y="390" width="748" height="160" rx="24" fill="url(#mint)"/>
+  <circle cx="116" cy="470" r="38" fill="white"/>
+  <!-- friendly bot icon -->
+  <rect x="92" y="451" width="48" height="38" rx="12" fill="#17352E"/>
+  <circle cx="107" cy="469" r="5" fill="#53CBA4"/>
+  <circle cx="125" cy="469" r="5" fill="#53CBA4"/>
+  <path d="M116 451v-10" stroke="#17352E" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="116" cy="438" r="5" fill="#269A78"/>
+  <text x="175" y="458" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700" fill="#172421">Это относится к вашей ситуации.</text>
+  <text x="175" y="496" font-family="Inter, Arial, sans-serif" font-size="22" fill="#64756F">Объясню, что нужно указать</text>
+  <text x="175" y="527" font-family="Inter, Arial, sans-serif" font-size="22" fill="#64756F">и почему.</text>
+</g>
+</svg>
+
+    </div>
   </div>
 </div>
 
@@ -777,7 +840,10 @@
 </div>
 
 <div class="topbar">
-  <button class="btn exit-btn" onclick="exitToLanding()">Выйти</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="icon-btn sidebar-toggle" onclick="toggleSidebar()" aria-label="Разделы декларации">☰</button>
+    <button class="btn exit-btn" onclick="exitToLanding()">Выйти</button>
+  </div>
   <div style="display:flex;gap:8px;">
     <button class="btn primary" onclick="saveProgress()">Сохранить черновик</button>
   </div>
@@ -811,6 +877,7 @@
 
 <!-- ============ APP LAYOUT (section pages + finish) ============ -->
 <div id="view-app" class="app-layout hidden">
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
   <div class="sidebar">
     <a class="back" href="#" onclick="event.preventDefault();navigate('home')">← На&nbsp;главную</a>
     <div class="sidebar-date" id="sidebar-date"></div>
@@ -821,6 +888,12 @@
     </div>
   </div>
   <div class="content" id="content"></div>
+</div>
+
+<div class="site-footer">
+  <a href="#" onclick="event.preventDefault();navigate('terms')">Условия использования</a>
+  <span class="site-footer-dot">·</span>
+  <a href="#" onclick="event.preventDefault();showBugReportInfo()">Сообщить об ошибке</a>
 </div>
 
 <script>
@@ -849,7 +922,7 @@ const sections = {
           "Хотите внести сведения о&nbsp;счетах в&nbsp;иностранных банках в&nbsp;декларацию?"
         ]
       },
-      {id:"securities", title:"Ценные бумаги", q:"Были ли&nbsp;у&nbsp;вас акции, облигации или другие инвест-инструменты из&nbsp;списка $DATE$?", hint:"Считаются акции, облигации, ПИФ, ETF, БПИФ, опционы и&nbsp;фьючерсы, инвестиционные ноты. Не&nbsp;считаются деньги на&nbsp;брокерском счете — для них отдельный раздел.",
+      {id:"securities", title:"Ценные бумаги", q:"Были ли&nbsp;у&nbsp;вас акции, облигации или другие инвест-инструменты из&nbsp;списка $DATE$ — в&nbsp;любой стране?", hint:"Считаются акции, облигации, ПИФ, ETF, БПИФ, опционы и&nbsp;фьючерсы, инвестиционные ноты. Не&nbsp;считаются деньги на&nbsp;брокерском счете — для них отдельный раздел.",
         recommendYes:[
           "Итак, у&nbsp;вас были ценные бумаги. Давайте разберемся, нужно ли&nbsp;их&nbsp;декларировать.",
           "Здесь порога нет: если бумаги были у&nbsp;вас на&nbsp;31.12.2025, их&nbsp;нужно задекларировать — независимо от&nbsp;суммы.",
@@ -857,7 +930,7 @@ const sections = {
           "Хотите внести сведения о&nbsp;ценных бумагах в&nbsp;декларацию?"
         ]
       },
-      {id:"brokerage", title:"Брокерские счета", q:"Были ли&nbsp;у&nbsp;вас зарубежные брокерские счета $DATE$?", hint:"Счет у&nbsp;брокера за&nbsp;пределами Казахстана — например, для покупки акций и&nbsp;облигаций.",
+      {id:"brokerage", title:"Брокерские счета за&nbsp;рубежом", q:"Были ли&nbsp;у&nbsp;вас зарубежные брокерские счета $DATE$?", hint:"Счет у&nbsp;брокера за&nbsp;пределами Казахстана — например, для покупки акций и&nbsp;облигаций.",
         recommendYes:[
           "Декларировать нужно не&nbsp;сам счет, а&nbsp;свободные деньги на&nbsp;нем — те, что просто лежали и&nbsp;не&nbsp;были вложены в&nbsp;бумаги.",
           "Если все деньги были вложены в&nbsp;акции или облигации, а&nbsp;свободного остатка не&nbsp;осталось — этот раздел заполнять не&nbsp;нужно. Сами бумаги указываются в&nbsp;разделе «Ценные бумаги».",
@@ -866,7 +939,7 @@ const sections = {
           "Хотите внести сведения о&nbsp;брокерских счетах в&nbsp;декларацию?"
         ]
       },
-      {id:"gold", title:"Золотые слитки и монеты", q:"Были ли&nbsp;у&nbsp;вас золотые слитки или монеты $DATE$?", hint:"Только физическое золото: слитки и&nbsp;инвестиционные монеты. Не&nbsp;считаются золотые счета в&nbsp;банках, золотые ETF, коллекционные монеты и&nbsp;украшения.",
+      {id:"gold", title:"Золотые слитки и монеты", q:"Были ли&nbsp;у&nbsp;вас золотые слитки или монеты $DATE$ — в&nbsp;любой стране?", hint:"Только физическое золото: слитки и&nbsp;инвестиционные монеты. Не&nbsp;считаются золотые счета в&nbsp;банках, золотые ETF, коллекционные монеты и&nbsp;украшения.",
         recommendYes:[
           "По&nbsp;правилам инвестиционное золото декларируется независимо от&nbsp;веса и&nbsp;от&nbsp;страны хранения — и&nbsp;в&nbsp;Казахстане, и&nbsp;за&nbsp;рубежом, в&nbsp;банковской ячейке или дома.",
           "Хотите внести сведения о&nbsp;золоте в&nbsp;декларацию?"
@@ -886,7 +959,7 @@ const sections = {
     desc: "Недвижимость, транспортные средства, долевое участие в&nbsp;строительстве",
     items: [
       {id:"realestate", title:"Недвижимость за&nbsp;рубежом", q:"Была ли&nbsp;у&nbsp;вас недвижимость за&nbsp;рубежом $DATE$?",
-        hint:"Любая недвижимость, зарегистрированная лично на&nbsp;вас. Жилье, земля, коммерческие объекты и&nbsp;другое.",
+        hint:"Любая недвижимость, зарегистрированная лично на&nbsp;вас. Жилье, земля, коммерческие объекты и&nbsp;другое. Недвижимость, зарегистрированная на&nbsp;супруга или&nbsp;супругу, сюда не&nbsp;входит — только то, что оформлено на&nbsp;вас лично.",
         recommendYes:[
           "Сюда входит: земельный участок, дом, дача, квартира, апартаменты, кладовая, гараж, офис, парковочное место, коммерческое здание. Если такой объект за&nbsp;рубежом — его нужно указать, независимо от&nbsp;стоимости.",
           {type:"tip", text:"Если недвижимость в&nbsp;России, все данные о&nbsp;ней можно увидеть в&nbsp;личном кабинете на&nbsp;сайте налоговой.", link:"/guides/real-estate.pdf"},
@@ -917,11 +990,11 @@ const sections = {
     icon: "🏢",
     desc: "Доля участия в&nbsp;уставном капитале иностранного юрлица",
     items: [
-      {id:"capital", title:"Доля в&nbsp;уставном капитале", q:"Был у&nbsp;вас уставный капитал в&nbsp;юрлице за&nbsp;рубежом $DATE$?",
+      {id:"capital", title:"Доля в&nbsp;уставном капитале", q:"Был ли&nbsp;у&nbsp;вас уставный капитал в&nbsp;юрлице за&nbsp;рубежом $DATE$?",
         hint:"Доля в&nbsp;ООО, LLC или похожей компании, зарегистрированной не&nbsp;в&nbsp;Казахстане. Акции акционерных обществ сюда не&nbsp;входят — для них раздел «Ценные бумаги».",
         recommendYes:[
           "Порога по&nbsp;сумме нет: если доля в&nbsp;уставном капитале была у&nbsp;вас на&nbsp;31.12.2025, ее&nbsp;нужно указать — независимо от&nbsp;размера. Неважно, работала ли&nbsp;компания и&nbsp;приносила ли&nbsp;доход.",
-          {type:"tip", text:"Если компания зарегистрирована в&nbsp;России, название, ИНН и&nbsp;размер вашей доли можно бесплатно найти в&nbsp;выписке из&nbsp;ЕГРЮЛ на&nbsp;сайте налоговой.", link:"/guides/egrul.pdf"},
+          {type:"tip", text:"Если компания зарегистрирована в&nbsp;России, название, ИНН и&nbsp;размер вашей доли можно бесплатно найти в&nbsp;выписке из&nbsp;ЕГРЮЛ на&nbsp;сайте налоговой.", link:"https://egrul.nalog.ru/index.html", linkLabel:"Открыть сайт →"},
           "Хотите внести сведения о&nbsp;доле в&nbsp;уставном капитале в&nbsp;декларацию?"
         ]
       },
@@ -932,7 +1005,7 @@ const sections = {
     icon: "💡",
     desc: "Патенты, авторские права и&nbsp;другие объекты ИС",
     items: [
-      {id:"ipobjects", title:"Объекты интеллектуальной собственности", q:"Были у&nbsp;вас права на&nbsp;товарный знак, программу, изобретение, произведение и&nbsp;т.п. $DATE$?",
+      {id:"ipobjects", title:"Объекты интеллектуальной собственности", q:"Были у&nbsp;вас права на&nbsp;товарный знак, программу, изобретение, произведение и&nbsp;т.п. $DATE$ — в&nbsp;любой стране?",
         hint:"Только если есть официально зарегистрированные права. Например, есть патент, свидетельство или регистрационный номер.",
         recommendYes:[
           "Порога по&nbsp;сумме нет: если хотя бы&nbsp;один такой объект был у&nbsp;вас на&nbsp;31.12.2025, его нужно указать — независимо от&nbsp;того, приносил ли&nbsp;он&nbsp;доход.",
@@ -948,7 +1021,7 @@ const sections = {
     desc: "Кредиты и&nbsp;займы, полученные от&nbsp;иностранных банков",
     items: [
       {id:"bankloans", title:"Кредиты и&nbsp;займы от&nbsp;иностранных банков", q:"Были у&nbsp;вас кредиты от&nbsp;иностранных банков, еще не&nbsp;выплаченные $DATE$?",
-        hint:"Учитывайте долг по&nbsp;кредитной карте, если он&nbsp;не&nbsp;был закрыт на&nbsp;31 декабря. Но&nbsp;если долга по&nbsp;кредитке не&nbsp;было, то&nbsp;она не&nbsp;учитывается.<br>И&nbsp;если у&nbsp;вас были кредиты, выданные вам как ИП, они тоже считаются.",
+        hint:"Сюда входят и&nbsp;обычные кредиты, и&nbsp;долг по&nbsp;кредитной карте, если он&nbsp;не&nbsp;был закрыт на&nbsp;31 декабря — учитывайте оба варианта. Если долга по&nbsp;кредитке не&nbsp;было, ее&nbsp;саму по&nbsp;себе указывать не&nbsp;нужно.<br>Кредиты, выданные вам как ИП, тоже считаются.",
         recommendYes:[
           "Учитывается остаток долга именно на&nbsp;31.12.2025. Если вы&nbsp;полностью погасили кредит раньше — указывать его не&nbsp;нужно.",
           "Порога по&nbsp;сумме нет: если долг был у&nbsp;вас на&nbsp;эту дату, его нужно указать — независимо от&nbsp;суммы.",
@@ -1059,12 +1132,25 @@ const statusLabel = {
 
 // ---------- routing ----------
 function navigate(route){
+  closeSidebar(); // выбор раздела в выезжающем сайдбаре сам закрывает панель
   window.location.hash = route === "landing" ? "" : route;
+}
+
+// ---------- выезжающий сайдбар на узких экранах ----------
+function toggleSidebar(){
+  document.querySelector(".sidebar").classList.toggle("sidebar-open");
+  document.querySelector(".sidebar-overlay").classList.toggle("sidebar-open");
+}
+function closeSidebar(){
+  const sb = document.querySelector(".sidebar");
+  const ov = document.querySelector(".sidebar-overlay");
+  if(sb) sb.classList.remove("sidebar-open");
+  if(ov) ov.classList.remove("sidebar-open");
 }
 
 window.addEventListener("hashchange", render);
 
-const PRE_VIEWS = ["view-landing","view-start","view-disclaimer","view-yearpick"];
+const PRE_VIEWS = ["view-landing","view-start","view-disclaimer","view-yearpick","view-terms"];
 
 function showOnlyView(id){
   PRE_VIEWS.concat(["view-home","view-app"]).forEach(v=>{
@@ -1093,6 +1179,8 @@ function render(){
     showOnlyView("view-disclaimer");
   } else if(hash === "yearpick"){
     showOnlyView("view-yearpick");
+  } else if(hash === "terms"){
+    showOnlyView("view-terms");
   } else if(hash === "home"){
     showOnlyView("view-home");
     renderHome();
@@ -1102,6 +1190,9 @@ function render(){
     if(hash === "finish"){
       renderFinish();
     } else if(sections[hash]){
+      // при переходе в раздел из сайдбара всегда показываем его со свёрнутыми карточками —
+      // не тем состоянием, в котором его оставили в прошлый раз
+      sections[hash].items.forEach(it => { state[hash][it.id].expanded = false; });
       renderSection(hash);
     } else {
       navigate("home");
@@ -2071,7 +2162,7 @@ const groupedConfig = {
       {key:"personId", type:"text", label:"Идентификатор", placeholder:"ИИН или ИНН"},
       {key:"amount", type:"number", label:"Сумма долга", placeholder:"0", dated:true, money:true},
       {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
-      {key:"basis", type:"text", label:"Основание", placeholder:"Договор, расписка"},
+      {key:"basis", type:"text", label:"Основание", placeholder:"Судебный приказ №123 от хх.хх.хх"},
     ],
   },
   payable: {
@@ -2086,7 +2177,7 @@ const groupedConfig = {
       {key:"personId", type:"text", label:"Идентификатор", placeholder:"ИИН или ИНН"},
       {key:"amount", type:"number", label:"Сумма долга", placeholder:"0", dated:true, money:true},
       {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
-      {key:"basis", type:"text", label:"Основание", placeholder:"Договор, расписка"},
+      {key:"basis", type:"text", label:"Основание", placeholder:"Судебный приказ №123 от хх.хх.хх"},
     ],
   },
   capital: {
@@ -2206,7 +2297,7 @@ const groupedConfig = {
           fields:[{key:"brokerName", label:"Брокер", placeholder:"Название брокера"}] },
     rowsLabel:"Счета у этого брокера",
     rowFields:[
-      {key:"accountNo", type:"text", label:"Номер счета", placeholder:"2032045243"},
+      {key:"accountNo", type:"text", label:"Номер счета", placeholder:"Номер счета или договора"},
       {key:"amount", type:"number", label:"Сумма остатка", placeholder:"0", dated:true, money:true},
       {key:"currency", type:"currency", label:"Валюта", placeholder:"Выберите валюту"},
     ],
@@ -2522,30 +2613,24 @@ function gGroupDraft(sectionKey, itemId, cfg){
 function gMidDraft(sectionKey, itemId, cfg){
   const d = state[sectionKey][itemId].draft;
 
-  // банк выбирается из справочника; для остальных случаев — ручной ввод
-  if(cfg.mid.pickFromDirectory && !d.data._manual){
-    const pickerId = `bankpick-${sectionKey}-${itemId}`;
+  // банк выбирается из справочника: два поля с автодополнением, свободный текст тоже принимается
+  if(cfg.mid.pickFromDirectory){
+    const commitId = `middraft-commit-${sectionKey}-${itemId}`;
+    const canCommit = String(d.data[cfg.mid.fields[0].key] || "").trim() !== "";
     return `
-      <div class="acc-draft acc-draft-flat">
-        <div class="bank-picker-row">
-          <div class="bank-picker">
-            <input id="${pickerId}" class="form-cell" type="text" autocomplete="off"
-              placeholder="Начните вводить название банка"
-              oninput="bankSearch('${sectionKey}','${itemId}','${pickerId}',this.value)"
-              onfocus="bankSearch('${sectionKey}','${itemId}','${pickerId}',this.value)"
-              onblur="bankSearchBlur('${pickerId}')">
-            <div id="${pickerId}-list" class="combo-list"></div>
-          </div>
-          ${cfg.mid.allowUpload
-            ? `<button class="btn upload-stmt-btn" onclick="gUploadFromDraft('${sectionKey}','${itemId}')">📄 Заполнить из справки</button>`
-            : ""}
+      <div class="acc-draft acc-draft-flat acc-draft-bankform">
+        <div class="acc-draft-bankhead">
+          ${cfg.mid.fields.map(mf => bankAutocompleteFieldHTML(sectionKey, itemId, mf, d.data[mf.key] || "")).join("")}
         </div>
-        <button class="acc-add-link" onclick="bankManualMode('${sectionKey}','${itemId}')">
-          Моего банка нет в списке — ввести вручную
-        </button>
         <div class="acc-draft-actions">
+          <button id="${commitId}" class="btn primary" ${canCommit ? "" : "disabled"}
+            onclick="gCommitDraft('${sectionKey}','${itemId}')">Добавить</button>
           <button class="btn" onclick="gCancelDraft('${sectionKey}','${itemId}')">Отмена</button>
         </div>
+        ${cfg.mid.allowUpload ? `
+          <div class="acc-draft-or">или</div>
+          <button class="btn upload-stmt-btn acc-upload-wide" onclick="gUploadFromDraft('${sectionKey}','${itemId}')">🪄 Заполнить из справки</button>
+        ` : ""}
       </div>
     `;
   }
@@ -2566,24 +2651,71 @@ function gMidDraft(sectionKey, itemId, cfg){
 }
 
 // выпадающий список банков под полем поиска
-function bankSearch(sectionKey, itemId, pickerId, query){
-  const listEl = document.getElementById(`${pickerId}-list`);
-  const input = document.getElementById(pickerId);
+// одно поле для ввода банка (название или ИНН) — оба используют общий справочник
+function bankAutocompleteFieldHTML(sectionKey, itemId, mf, value){
+  const fieldId = `bankdraft-${sectionKey}-${itemId}-${mf.key}`;
+  const wrapCls = mf.key === "bankName" ? "acc-bank-field-name" : "acc-bank-field-inn";
+  const inputCls = mf.key === "bankName" ? "acc-bank-name-input" : "";
+  return `
+    <div class="acc-bank-field ${wrapCls}">
+      <div class="acc-field-label">${mf.label}</div>
+      <div class="bank-autocomplete">
+        <input id="${fieldId}" class="form-cell ${inputCls}" type="text" autocomplete="off"
+          placeholder="${mf.placeholder}" value="${esc(value)}"
+          oninput="bankDraftInput('${sectionKey}','${itemId}','${mf.key}',this)"
+          onfocus="bankDraftSearch('${sectionKey}','${itemId}','${mf.key}',this.value)"
+          onblur="bankDraftBlur('${fieldId}')">
+        <div id="${fieldId}-list" class="combo-list"></div>
+      </div>
+    </div>
+  `;
+}
+// делает кнопку «Добавить» активной, как только в первом поле (название банка) что-то введено
+function refreshMidCommitBtn(sectionKey, itemId){
+  const cfg = groupedConfig[itemId];
+  const d = state[sectionKey][itemId].draft;
+  if(!cfg || !cfg.mid || !d) return;
+  const btn = document.getElementById(`middraft-commit-${sectionKey}-${itemId}`);
+  if(!btn) return;
+  btn.disabled = String(d.data[cfg.mid.fields[0].key] || "").trim() === "";
+}
+
+// ввод в любое из двух полей — сохраняем как есть (свободный текст допустим) и ищем подсказки
+function bankDraftInput(sectionKey, itemId, key, inputEl){
+  const d = state[sectionKey][itemId].draft;
+  if(!d) return;
+  let value = inputEl.value;
+  const cfg = groupedConfig[itemId];
+  const mf = cfg.mid.fields.find(f => f.key === key);
+  if(mf && mf.inn){
+    const group = state[sectionKey][itemId].groups[d.gi];
+    const clean = sanitizeInn(value, group ? group.gval : "");
+    if(inputEl.value !== clean) inputEl.value = clean;
+    value = clean;
+  }
+  d.data[key] = value;
+  bankDraftSearch(sectionKey, itemId, key, value);
+  refreshMidCommitBtn(sectionKey, itemId);
+}
+function bankDraftSearch(sectionKey, itemId, key, query){
+  const fieldId = `bankdraft-${sectionKey}-${itemId}-${key}`;
+  const listEl = document.getElementById(`${fieldId}-list`);
+  const input = document.getElementById(fieldId);
   if(!listEl || !input) return;
   const found = findBanks(query);
   listEl.innerHTML = found.length
     ? found.map(b=>`
         <div class="combo-item bank-item"
-          onmousedown="event.preventDefault();bankPick('${sectionKey}','${itemId}','${b.inn}')">
+          onmousedown="event.preventDefault();bankDraftPick('${sectionKey}','${itemId}','${b.inn}')">
           <span class="bank-item-name">${b.name}</span>
           <span class="bank-item-inn">ИНН ${b.inn}</span>
         </div>`).join("")
     : `<div class="combo-empty">Ничего не найдено — можно ввести вручную</div>`;
   const r = input.getBoundingClientRect();
   listEl.style.left = `${r.left}px`;
-  listEl.style.width = `${Math.max(r.width, 320)}px`;
+  listEl.style.width = `${Math.max(r.width, 280)}px`;
   const below = window.innerHeight - r.bottom;
-  if(below < 260 && r.top > below){
+  if(below < 220 && r.top > below){
     listEl.style.top = "auto";
     listEl.style.bottom = `${window.innerHeight - r.top + 4}px`;
   } else {
@@ -2592,29 +2724,29 @@ function bankSearch(sectionKey, itemId, pickerId, query){
   }
   listEl.style.display = "block";
 }
-// закрываем список банков при уходе с поля; задержка — чтобы клик по варианту (onmousedown) успел сработать раньше blur
-function bankSearchBlur(pickerId){
+// выбор варианта из подсказки в ЛЮБОМ из двух полей — заполняет сразу оба, но не сохраняет банк
+function bankDraftPick(sectionKey, itemId, inn){
+  const bank = BANKS_RU.find(b => b.inn === inn);
+  const d = state[sectionKey][itemId].draft;
+  if(!bank || !d) return;
+  d.data.bankName = bank.name;
+  d.data.bankId = bank.inn;
+  const nameInput = document.getElementById(`bankdraft-${sectionKey}-${itemId}-bankName`);
+  if(nameInput) nameInput.value = bank.name;
+  const innInput = document.getElementById(`bankdraft-${sectionKey}-${itemId}-bankId`);
+  if(innInput) innInput.value = bank.inn;
+  ["bankName","bankId"].forEach(k=>{
+    const listEl = document.getElementById(`bankdraft-${sectionKey}-${itemId}-${k}-list`);
+    if(listEl) listEl.style.display = "none";
+  });
+  refreshMidCommitBtn(sectionKey, itemId);
+}
+// закрываем список при уходе с поля; задержка — чтобы клик по варианту (onmousedown) успел сработать раньше blur
+function bankDraftBlur(fieldId){
   setTimeout(()=>{
-    const listEl = document.getElementById(`${pickerId}-list`);
+    const listEl = document.getElementById(`${fieldId}-list`);
     if(listEl) listEl.style.display = "none";
   }, 150);
-}
-
-// выбрали банк — сразу добавляем его вместе с ИНН
-function bankPick(sectionKey, itemId, inn){
-  const bank = BANKS_RU.find(b => b.inn === inn);
-  if(!bank) return;
-  const st = state[sectionKey][itemId];
-  st.draft.data.bankName = bank.name;
-  st.draft.data.bankId = bank.inn;
-  gCommitDraft(sectionKey, itemId);
-}
-
-// переключение на ручной ввод для банков не из справочника
-function bankManualMode(sectionKey, itemId){
-  const d = state[sectionKey][itemId].draft;
-  if(d) d.data._manual = true;
-  renderSection(sectionKey);
 }
 
 function gUploadFromDraft(sectionKey, itemId){
@@ -2978,7 +3110,121 @@ function applyExtractionResult(sectionKey, itemId, gi, result){
 }
 
 // ---------- сам сценарий загрузки справки ----------
+// ---------- согласие на отправку справки в OpenAI (один раз, перед первой загрузкой) ----------
+const UPLOAD_CONSENT_KEY = "bankUploadConsentGiven";
+function hasUploadConsent(){
+  try{ return localStorage.getItem(UPLOAD_CONSENT_KEY) === "1"; }catch(e){ return false; }
+}
+function setUploadConsent(){
+  try{ localStorage.setItem(UPLOAD_CONSENT_KEY, "1"); }catch(e){}
+}
+
+function showUploadConsent(onAccept){
+  const old = document.getElementById("upload-consent-overlay");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "upload-consent-overlay";
+  el.className = "confirm-overlay";
+  el.innerHTML = `
+    <div class="confirm-box" role="dialog" aria-modal="true">
+      <div class="confirm-title">Прежде чем загрузить справку</div>
+      <div class="confirm-text">
+        Файл уйдёт в&nbsp;OpenAI (США) для автоматического распознавания. Мы его не&nbsp;сохраняем.
+        Как OpenAI обрабатывает такие данные — в&nbsp;их
+        <a href="https://openai.com/policies/api-data-usage-policies/" target="_blank" rel="noopener">политике использования данных API</a>.
+      </div>
+      <div class="confirm-actions">
+        <button class="btn" id="upload-consent-no">Отмена</button>
+        <button class="btn primary" id="upload-consent-yes">Согласен, продолжить</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.querySelector("#upload-consent-no").onclick = close;
+  el.querySelector("#upload-consent-yes").onclick = () => {
+    setUploadConsent();
+    close();
+    onAccept();
+  };
+  el.onclick = e => { if(e.target === el) close(); };
+}
+
+// ---------- какая справка нужна (один раз, перед самым первым распознаванием) ----------
+const UPLOAD_INFO_KEY = "bankUploadInfoSeen";
+function hasSeenUploadInfo(){
+  try{ return localStorage.getItem(UPLOAD_INFO_KEY) === "1"; }catch(e){ return false; }
+}
+function setSeenUploadInfo(){
+  try{ localStorage.setItem(UPLOAD_INFO_KEY, "1"); }catch(e){}
+}
+
+// ---------- «Сообщить об ошибке» — короткая подсказка написать на почту ----------
+function showBugReportInfo(){
+  const old = document.getElementById("bugreport-overlay");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "bugreport-overlay";
+  el.className = "confirm-overlay";
+  el.innerHTML = `
+    <div class="confirm-box" role="dialog" aria-modal="true">
+      <div class="confirm-title">Нашли ошибку?</div>
+      <div class="confirm-text">
+        Напишите на почту: <a href="mailto:whynt.lab@gmail.com">whynt.lab@gmail.com</a>
+      </div>
+      <div class="confirm-actions">
+        <button class="btn primary" id="bugreport-ok">Понятно</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.querySelector("#bugreport-ok").onclick = close;
+  el.onclick = e => { if(e.target === el) close(); };
+}
+
+function showUploadInfo(onContinue){
+  const old = document.getElementById("upload-info-overlay");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "upload-info-overlay";
+  el.className = "confirm-overlay";
+  el.innerHTML = `
+    <div class="confirm-box" role="dialog" aria-modal="true">
+      <div class="confirm-title">Какая справка нужна</div>
+      <div class="confirm-text">
+        Нужна не&nbsp;любая справка, а&nbsp;именно <b>справка об&nbsp;остатках на&nbsp;счетах для государственных
+        служащих</b> (иногда называется «справка для декларирования»). В&nbsp;ней банк уже сам сводит остатки
+        по&nbsp;всем счетам на&nbsp;нужную дату — с&nbsp;обычной выпиской по&nbsp;счёту так не&nbsp;сработает.
+        Обычно её можно бесплатно заказать в&nbsp;приложении или личном кабинете банка.
+      </div>
+      <a class="tip-link" href="/guides/bank-statements.pdf" target="_blank" rel="noopener" style="display:block;margin-top:6px;">
+        Как получить такую справку →
+      </a>
+      <div class="confirm-actions">
+        <button class="btn primary" id="upload-info-ok">Понятно, дальше</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.querySelector("#upload-info-ok").onclick = () => {
+    setSeenUploadInfo();
+    close();
+    onContinue();
+  };
+  el.onclick = e => { if(e.target === el) close(); };
+}
+
 async function uploadBankStatement(sectionKey, itemId, gi){
+  if(!hasSeenUploadInfo()){
+    showUploadInfo(() => uploadBankStatement(sectionKey, itemId, gi));
+    return;
+  }
+  if(!hasUploadConsent()){
+    showUploadConsent(() => uploadBankStatement(sectionKey, itemId, gi));
+    return;
+  }
   const file = await pickFile(".pdf,.jpg,.jpeg,.png,.webp");
   if(!file) return;
 
@@ -3207,7 +3453,7 @@ function renderSection(key){
     } else if(st.everOpened){
       headRightHTML = `<span class="q-card-badge pending">Жду ваш ответ</span>`;
     } else {
-      headRightHTML = `<span class="q-card-badge notopened"><span class="badge-icon">🟢</span>Посмотреть</span>`;
+      headRightHTML = `<span class="q-card-badge notopened"><span class="badge-icon badge-dot"></span>Посмотреть</span>`;
     }
 
     html += `
@@ -3297,7 +3543,7 @@ function botRowHTML(msg, style, isThinking){
         <div class="bot-bubble tip">
           <div class="tip-title">💡 Полезный совет</div>
           <div>${msg.text}</div>
-          ${msg.link ? `<a class="tip-link" href="${msg.link}" target="_blank" rel="noopener">Узнать как →</a>` : ""}
+          ${msg.link ? `<a class="tip-link" href="${msg.link}" target="_blank" rel="noopener">${msg.linkLabel || "Узнать как →"}</a>` : ""}
         </div>
       </div>
     `;
@@ -3455,12 +3701,17 @@ function renderFinish(){
   const content = document.getElementById("content");
   let html = `<h2>Завершение декларации</h2><p class="subtitle">Проверьте разделы, затем укажите данные профиля · <span class="date-pill">сведения на ${asOfDate()}</span></p>`;
 
-  let allReady = true;
+  let hasHardBlock = false;   // раздел начат, но данные не дозаполнены — экспортировать нельзя
+  let anyIncluded = false;    // хотя бы один раздел реально войдёт в декларацию
+  const notReviewed = [];     // раздел не открывали или не досмотрели — можно пропустить
+
   sectionOrder.forEach(key=>{
     const s = sections[key];
     const st = sectionStatus(key);
+    if(sections[key].items.some(it => state[key][it.id].decision === "include" && !isDataFilled(key, it.id))) hasHardBlock = true;
+    if(st === "inprogress" || st === "notstarted") notReviewed.push(s.title);
+    if(sections[key].items.some(it => state[key][it.id].decision === "include")) anyIncluded = true;
     const needsFix = (st === "hasgaps" || st === "inprogress" || st === "notstarted");
-    if(needsFix) allReady = false;
     html += `
       <div class="summary-row">
         <span>${s.icon} ${s.title} — <strong>${statusLabel[st]}</strong></span>
@@ -3468,6 +3719,8 @@ function renderFinish(){
       </div>
     `;
   });
+
+  const canGenerate = anyIncluded && !hasHardBlock;
 
   html += `
     <div class="profile-form">
@@ -3538,11 +3791,13 @@ function renderFinish(){
     </div>
 
     <div class="final-cta">
-      <button class="btn primary" ${allReady ? "" : "disabled style='opacity:.5;cursor:not-allowed;'"} onclick="finalExport()">Сформировать декларацию</button>
+      <button class="btn primary" ${canGenerate ? "" : "disabled style='opacity:.5;cursor:not-allowed;'"} onclick="finalExport()">Сформировать декларацию</button>
       <div class="final-cta-note">
         Файл в&nbsp;формате для загрузки в&nbsp;Кабинете налогоплательщика — <a href="https://knp.kgd.gov.kz" target="_blank" rel="noopener">knp.kgd.gov.kz</a>
       </div>
-      ${!allReady ? `<div class="warning-list">Сначала исправьте разделы с&nbsp;пометкой «Есть пропуски» выше.</div>` : ""}
+      ${!anyIncluded ? `<div class="warning-list">Сначала отметьте хотя бы один раздел, который нужно включить в&nbsp;декларацию.</div>` : ""}
+      ${anyIncluded && hasHardBlock ? `<div class="warning-list">Сначала исправьте разделы с&nbsp;пометкой «Есть пропуски» выше — там начат ввод данных, но не хватает обязательных полей.</div>` : ""}
+      ${canGenerate && notReviewed.length ? `<div class="warning-list warning-list-soft">Не все разделы просмотрены (${esc(notReviewed.join(", "))}) — это не помешает сформировать декларацию, но стоит проверить, не забыли ли вы что-то.</div>` : ""}
     </div>
   `;
   content.innerHTML = html;
@@ -4023,39 +4278,86 @@ function finalExport(){
     alert("Проверьте данные:\n• " + badFields.join("\n• "));
     return;
   }
-  saveToStorage();
-  downloadJson(buildIsndJson(), `declaration-250-${reportYear}.json`);
-}
 
-// ---------- слайдер-превью на посадочной странице ----------
-const PREVIEW_CAPTIONS = [
-  "Бот объясняет простыми словами, что и когда нужно указывать",
-  "Загрузите справку из банка — бот сам подставит счета и суммы",
-  "Когда всё готово — скачайте файл и загрузите его на сайте налоговой",
-];
-let previewIndex = 0;
-function paintPreviewSlider(){
-  const track = document.getElementById("preview-track");
-  if(!track) return;
-  track.style.transform = `translateX(-${previewIndex * 100}%)`;
-  const cap = document.getElementById("preview-caption");
-  if(cap) cap.textContent = PREVIEW_CAPTIONS[previewIndex];
-  const dots = document.getElementById("preview-dots");
-  if(dots){
-    dots.innerHTML = PREVIEW_CAPTIONS.map((_, i)=>
-      `<button class="preview-dot ${i === previewIndex ? "preview-dot-active" : ""}" onclick="goPreviewSlide(${i})" aria-label="Слайд ${i+1}"></button>`
-    ).join("");
+  // жёсткие ограничения: пустая декларация или недозаполненные включённые разделы —
+  // не блокируем кнопку молча, а объясняем, что именно поправить
+  const anyIncluded = sectionOrder.some(key =>
+    sections[key].items.some(it => state[key][it.id].decision === "include")
+  );
+  if(!anyIncluded){
+    alert("Сначала отметьте хотя бы один раздел, который нужно включить в декларацию.");
+    return;
+  }
+  // проверяем КАЖДЫЙ включённый пункт отдельно, а не статус раздела целиком —
+  // иначе недозаполненный пункт мог остаться незамеченным, если рядом есть ещё не просмотренные
+  const hasHardBlock = sectionOrder.some(key =>
+    sections[key].items.some(it => state[key][it.id].decision === "include" && !isDataFilled(key, it.id))
+  );
+  if(hasHardBlock){
+    alert("Сначала исправьте разделы с пометкой «Есть пропуски» — там начат ввод данных, но не хватает обязательных полей.");
+    return;
+  }
+
+  // мягкое предупреждение: разделы, которые не открывали или не досмотрели —
+  // не блокируем, просто уточняем, что человек точно этого хотел
+  const notReviewed = sectionOrder
+    .filter(key => { const st = sectionStatus(key); return st === "inprogress" || st === "notstarted"; })
+    .map(key => sections[key].title);
+
+  const proceed = () => {
+    saveToStorage();
+    downloadJson(buildIsndJson(), `declaration-250-${reportYear}.json`);
+    showSubmitInstructions();
+  };
+
+  if(notReviewed.length){
+    askConfirm({
+      title: "Есть непросмотренные разделы",
+      text: `Вы не открывали или не завершили выбор в разделах: ${notReviewed.join(", ")}. В декларацию попадёт только то, что вы уже отметили — остальное можно доделать позже. Сформировать сейчас?`,
+      okLabel: "Сформировать всё равно",
+      danger: false,
+      onConfirm: proceed,
+    });
+  } else {
+    proceed();
   }
 }
-function previewSlide(delta){
-  previewIndex = (previewIndex + delta + PREVIEW_CAPTIONS.length) % PREVIEW_CAPTIONS.length;
-  paintPreviewSlider();
+
+// ---------- инструкция «что делать дальше» после скачивания файла ----------
+function showSubmitInstructions(){
+  const old = document.getElementById("submit-instructions-overlay");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "submit-instructions-overlay";
+  el.className = "confirm-overlay";
+  el.innerHTML = `
+    <div class="confirm-box submit-instructions-box" role="dialog" aria-modal="true">
+      <button class="confirm-close" id="submit-instr-close" aria-label="Закрыть">×</button>
+      <div class="confirm-title">Файл скачан — что дальше?</div>
+      <div class="confirm-text">Осталось загрузить его в систему налоговой — это уже делаете вы сами, на официальном сайте.</div>
+      <ol class="submit-steps">
+        <li>Войдите в личный кабинет на <a href="https://knp.kgd.gov.kz/signin" target="_blank" rel="noopener">knp.kgd.gov.kz</a></li>
+        <li>Нажмите «Подать документ»</li>
+        <li>Выберите форму «250.00 Декларация об активах и обязательствах»</li>
+        <li>Укажите год — <b>${reportYear}</b></li>
+        <li>Нажмите кнопку «ЗАГРУЗИТЬ (JSON)»</li>
+        <li>Выберите скачанный файл <span class="submit-filename">declaration-250-${reportYear}.json</span></li>
+      </ol>
+      <div class="confirm-actions">
+        <a class="btn primary" href="https://knp.kgd.gov.kz/signin" target="_blank" rel="noopener">Открыть сайт налоговой</a>
+        <button class="btn" id="submit-instr-ok">Понятно</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.querySelector("#submit-instr-close").onclick = close;
+  el.querySelector("#submit-instr-ok").onclick = close;
+  el.onclick = e => { if(e.target === el) close(); };
+  document.addEventListener("keydown", function esc(e){
+    if(e.key === "Escape"){ close(); document.removeEventListener("keydown", esc); }
+  });
 }
-function goPreviewSlide(i){
-  previewIndex = i;
-  paintPreviewSlider();
-}
-paintPreviewSlider();
 
 loadFromStorage(); // восстанавливаем черновик из браузера
 render();
