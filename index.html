@@ -3161,6 +3161,223 @@ function applyExtractionResult(sectionKey, itemId, gi, result){
             warn ? "warn" : "ok", Boolean(conv || miss));
 }
 
+// ================== ЛОКАЛЬНЫЙ РАЗБОР PDF ПО КООРДИНАТАМ ==================
+// Модель читает текстовый слой PDF в том порядке, в каком он записан в файле,
+// а он не совпадает с тем, что видно на странице: в справке Т-Банка колонка
+// остатка идет в тексте последней, хотя нарисована первой. Из-за этого и gpt-5,
+// и gpt-4o одинаково брали суммы из колонки поступлений.
+//
+// Здесь порядок не используется вовсе. У каждого фрагмента текста в PDF есть
+// координаты: по Y собираем строки, по X — колонки. Число попадает в колонку
+// «Остаток» не по догадке, а потому что стоит под ее заголовком.
+//
+// Если разбор не удался (скан без текстового слоя, незнакомая верстка) —
+// возвращаем null, и вызывающий код уходит на прежний путь через сервер.
+
+const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let _pdfjsPromise = null;
+function loadPdfJs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(_pdfjsPromise) return _pdfjsPromise;
+  _pdfjsPromise = new Promise((resolve, reject)=>{
+    const sc = document.createElement("script");
+    sc.src = PDFJS_URL;
+    sc.onload = () => {
+      if(!window.pdfjsLib){ reject(new Error("pdf.js не загрузился")); return; }
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+      resolve(window.pdfjsLib);
+    };
+    sc.onerror = () => reject(new Error("pdf.js не загрузился"));
+    document.head.appendChild(sc);
+  });
+  return _pdfjsPromise;
+}
+
+// Курсы ЦБ на отчетные даты — те же, что в воркере. Нужны здесь, чтобы валютные
+// остатки пересчитывались без обращения к серверу.
+const CBR_RATES_LOCAL = {
+  "2025-12-31": {
+    AED: 21.3007, AMD: 0.205126, AUD: 52.4979, AZN: 46.0157,
+    BDT: 0.639605, BGN: 47.0602, BHD: 208.0048, BOB: 11.3208,
+    BRL: 14.0352, BYN: 26.9496, CAD: 57.1582, CHF: 99.1969,
+    CNY: 11.1592, CUP: 3.25945, CZK: 3.79134, DKK: 12.3229,
+    DZD: 0.604454, EGP: 1.64068, ETB: 0.505786, EUR: 92.0938,
+    GBP: 105.606, GEL: 29.0212, HKD: 10.0678, HUF: 0.238285,
+    IDR: 0.00465968, INR: 0.869737, IRR: 0.00010579, JPY: 0.500491,
+    KGS: 0.894861, KRW: 0.0545552, KZT: 0.154978, MDL: 4.66212,
+    MMK: 0.0372508, MNT: 0.0219944, NGN: 0.0542295, NOK: 7.78236,
+    NZD: 45.6805, OMR: 203.4505, PLN: 21.7683, QAR: 21.4909,
+    RON: 18.0721, RSD: 0.785461, SAR: 20.8605, SEK: 8.50976,
+    SGD: 60.8437, THB: 2.48095, TJS: 8.45593, TMT: 22.3505,
+    TRY: 1.82377, UAH: 1.85293, USD: 78.2267, UZS: 0.0065165,
+    VND: 0.00311362, XDR: 107.1729, ZAR: 4.69571
+  },
+};
+
+// Собираем фрагменты текста со всех страниц вместе с координатами.
+async function pdfTextItems(file){
+  const pdfjsLib = await loadPdfJs();
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const pages = [];
+  for(let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = [];
+    for(const it of content.items){
+      const str = (it.str || "").trim();
+      if(!str) continue;
+      items.push({str, x: it.transform[4], y: it.transform[5], w: it.width || 0});
+    }
+    pages.push(items);
+  }
+  return pages;
+}
+
+// Строки страницы: фрагменты с близким Y лежат на одной строке.
+function groupIntoLines(items){
+  const sorted = items.slice().sort((a, b) => (b.y - a.y) || (a.x - b.x));
+  const lines = [];
+  for(const it of sorted){
+    const last = lines[lines.length - 1];
+    if(last && Math.abs(last.y - it.y) <= 3){
+      last.items.push(it);
+      last.y = (last.y + it.y) / 2;
+    } else {
+      lines.push({y: it.y, items: [it]});
+    }
+  }
+  lines.forEach(l => l.items.sort((a, b) => a.x - b.x));
+  return lines;
+}
+
+const RE_ACCOUNT = /^\d{20}$/;
+const RE_CURRENCY = /^[A-Z]{3}$/;
+const RE_MONEY = /^-?[\d\u00A0 ]+(?:[.,]\d{1,2})?$/;
+
+function parseMoney(s){
+  const n = Number(String(s).replace(/[\u00A0\s]/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+// Ищем на странице заголовки колонок и запоминаем их X.
+// Заголовок часто разбит на несколько строк — берем X первого фрагмента.
+function findColumnAnchors(lines){
+  const anchors = [];
+  const want = [
+    {key: "balance",  re: /Остаток/i},
+    {key: "inflow",   re: /поступивш/i},
+    {key: "income",   re: /^Доход/i},
+    {key: "currency", re: /^Валюта/i},
+    {key: "opened",   re: /^Дата\b/i},
+    {key: "kind",     re: /^Вид\b/i},
+    {key: "number",   re: /^Номер\b/i},
+  ];
+  for(const line of lines){
+    for(const it of line.items){
+      for(const w of want){
+        if(w.re.test(it.str) && !anchors.some(a => a.key === w.key)){
+          anchors.push({key: w.key, x: it.x});
+        }
+      }
+    }
+  }
+  anchors.sort((a, b) => a.x - b.x);
+  return anchors;
+}
+
+// К какой колонке относится фрагмент: к последней, чей левый край не правее его.
+function columnOf(x, anchors){
+  let found = null;
+  for(const a of anchors){
+    if(x >= a.x - 4) found = a.key; else break;
+  }
+  return found;
+}
+
+// Разбираем одну страницу: возвращаем строки счетов.
+function parsePage(items, diag){
+  const lines = groupIntoLines(items);
+  const anchors = findColumnAnchors(lines);
+  const hasBalance = anchors.some(a => a.key === "balance");
+  const hasCurrency = anchors.some(a => a.key === "currency");
+  if(!hasBalance || !hasCurrency) return [];
+
+  diag.anchors = anchors.map(a => a.key + "@" + Math.round(a.x));
+
+  const rows = [];
+  for(const line of lines){
+    if(!line.items.some(it => RE_ACCOUNT.test(it.str))) continue;   // строка счета
+    const cells = {};
+    for(const it of line.items){
+      const col = columnOf(it.x, anchors);
+      if(!col) continue;
+      if(cells[col] === undefined) cells[col] = it.str;
+    }
+    const currency = RE_CURRENCY.test(cells.currency || "") ? cells.currency : null;
+    const balRaw = cells.balance;
+    const amount = balRaw && RE_MONEY.test(balRaw) ? parseMoney(balRaw) : null;
+    rows.push({currency, amount, raw: {balance: balRaw, inflow: cells.inflow, income: cells.income}});
+  }
+  return rows;
+}
+
+// Главная функция: разбирает справку целиком, либо возвращает null.
+async function parseStatementLocally(file, expectedDate){
+  if(!file || file.type !== "application/pdf") return null;
+
+  const pages = await pdfTextItems(file);
+  const allText = pages.map(p => p.map(i => i.str).join(" ")).join("\n");
+
+  const diag = {};
+  let rows = [];
+  for(const items of pages) rows = rows.concat(parsePage(items, diag));
+
+  console.log("[локальный разбор] колонки:", diag.anchors || "не найдены",
+              "| строк счетов:", rows.length);
+  console.table(rows.map(r => ({валюта: r.currency, остаток: r.raw.balance,
+                                поступления: r.raw.inflow, доход: r.raw.income})));
+
+  const usable = rows.filter(r => r.currency && r.amount !== null && r.amount !== 0);
+  if(!rows.length) return null;              // таблицу не нашли — пусть решает сервер
+
+  // Отчетная дата: если нашли и она не та, дальше идти нельзя.
+  const dm = allText.match(/на\s+(\d{2})\.(\d{2})\.(\d{4})/);
+  const foundDate = dm ? `${dm[3]}-${dm[2]}-${dm[1]}` : null;
+  if(expectedDate && foundDate && foundDate !== expectedDate){
+    const ru = d => d.slice(8,10) + "." + d.slice(5,7) + "." + d.slice(0,4);
+    throw new Error(`Справка составлена на ${ru(foundDate)}, а для декларации нужны данные на ${ru(expectedDate)}. Закажите в банке справку на нужную дату.`);
+  }
+
+  const innMatch = allText.match(/ИНН[\s:]*(\d{10})\b/);
+  const bankInn = innMatch ? innMatch[1] : null;
+
+  // Пересчет валютных остатков: в справке они в рублях по курсу ЦБ.
+  const rates = CBR_RATES_LOCAL[expectedDate] || null;
+  const balances = [];
+  const converted = [];
+  const notConverted = [];
+  for(const r of usable){
+    if(r.currency === "RUB"){ balances.push({currency: "RUB", amount: r.amount}); continue; }
+    const rate = rates && rates[r.currency];
+    if(!rate){
+      if(!notConverted.includes(r.currency)) notConverted.push(r.currency);
+      continue;
+    }
+    balances.push({currency: r.currency, amount: Math.round((r.amount / rate) * 100) / 100,
+                   convertedFrom: "RUB"});
+    if(!converted.includes(r.currency)) converted.push(r.currency);
+  }
+
+  if(!balances.length) return null;          // ничего пригодного — на сервер
+
+  console.log("[локальный разбор] итог:", balances.length, "строк, пересчитано:",
+              converted.join(",") || "—");
+  return {bankName: null, bankInn, balances, converted, notConverted, unitAssumed: false};
+}
+
 // ---------- сам сценарий загрузки справки ----------
 // ---------- согласие на отправку справки в OpenAI (один раз, перед первой загрузкой) ----------
 const UPLOAD_CONSENT_KEY = "bankUploadConsentGiven";
@@ -3273,13 +3490,38 @@ async function uploadBankStatement(sectionKey, itemId, gi){
     showUploadInfo(() => uploadBankStatement(sectionKey, itemId, gi));
     return;
   }
-  if(!hasUploadConsent()){
-    showUploadConsent(() => uploadBankStatement(sectionKey, itemId, gi));
-    return;
-  }
+  // Согласие на отправку в OpenAI спрашиваем не здесь, а только если понадобится
+  // отправлять: электронный PDF разбирается прямо в браузере и никуда не уходит.
   const file = await pickFile(".pdf,.jpg,.jpeg,.png,.webp");
   if(!file) return;
 
+  showToast("⏳ Читаем справку…", "info", true);
+
+  // 1) Пробуем разобрать сами, по координатам текста в PDF.
+  try{
+    const local = await parseStatementLocally(file, `${reportYear - 1}-12-31`);
+    if(local){
+      hideToast();
+      applyExtractionResult(sectionKey, itemId, gi, local);
+      return;
+    }
+  }catch(err){
+    // Осмысленную ошибку (не та дата) показываем сразу, а не уходим на сервер.
+    hideToast();
+    showToast("Не получилось: " + err.message, "warn");
+    return;
+  }
+
+  // 2) Не вышло — скан или незнакомая верстка. Тогда через сервер, с согласием.
+  hideToast();
+  if(!hasUploadConsent()){
+    showUploadConsent(() => sendStatementToProxy(file, sectionKey, itemId, gi));
+    return;
+  }
+  sendStatementToProxy(file, sectionKey, itemId, gi);
+}
+
+async function sendStatementToProxy(file, sectionKey, itemId, gi){
   showToast("⏳ Читаем справку…", "info", true);
   try{
     const {mediaType, base64} = await fileToBase64(file);
