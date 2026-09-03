@@ -3162,17 +3162,21 @@ function applyExtractionResult(sectionKey, itemId, gi, result){
 }
 
 // ================== ЛОКАЛЬНЫЙ РАЗБОР PDF ПО КООРДИНАТАМ ==================
-// Модель читает текстовый слой PDF в том порядке, в каком он записан в файле,
-// а он не совпадает с тем, что видно на странице: в справке Т-Банка колонка
-// остатка идет в тексте последней, хотя нарисована первой. Из-за этого и gpt-5,
-// и gpt-4o одинаково брали суммы из колонки поступлений.
+// Модель читает текстовый слой PDF в том порядке, в каком он записан в файле, а он
+// не совпадает с тем, что видно на странице: в справке Т-Банка колонка остатка идет
+// в тексте последней, хотя нарисована первой. Поэтому и gpt-5, и gpt-4o одинаково
+// брали суммы из колонки поступлений.
 //
-// Здесь порядок не используется вовсе. У каждого фрагмента текста в PDF есть
-// координаты: по Y собираем строки, по X — колонки. Число попадает в колонку
-// «Остаток» не по догадке, а потому что стоит под ее заголовком.
+// Здесь порядок не используется. У каждого фрагмента текста есть координаты: по Y
+// собираются строки, по X — колонки. Число относится к колонке «Остаток» не по
+// догадке, а потому что его середина попадает в диапазон этого заголовка.
 //
-// Если разбор не удался (скан без текстового слоя, незнакомая верстка) —
-// возвращаем null, и вызывающий код уходит на прежний путь через сервер.
+// Важное наблюдение: выравнивание чисел у банков разное. Сбер прижимает их вправо,
+// Т-Банк влево, Альфа центрирует. Поэтому делить пополам между заголовками нельзя —
+// сравниваем с диапазоном самого заголовка, собранным из всех его строк.
+//
+// Проверено на справках Альфа-Банка, Озон Банка, Сбербанка, Т-Банка и Яндекс Банка:
+// колонки и суммы совпадают с документом во всех пяти.
 
 const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -3185,17 +3189,17 @@ function loadPdfJs(){
     const sc = document.createElement("script");
     sc.src = PDFJS_URL;
     sc.onload = () => {
-      if(!window.pdfjsLib){ reject(new Error("pdf.js не загрузился")); return; }
+      if(!window.pdfjsLib){ reject(new Error("Не удалось загрузить разбор PDF")); return; }
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       resolve(window.pdfjsLib);
     };
-    sc.onerror = () => reject(new Error("pdf.js не загрузился"));
+    sc.onerror = () => reject(new Error("Не удалось загрузить разбор PDF"));
     document.head.appendChild(sc);
   });
   return _pdfjsPromise;
 }
 
-// Курсы ЦБ на отчетные даты — те же, что в воркере. Нужны здесь, чтобы валютные
+// Курсы ЦБ на отчетные даты — те же, что в воркере. Здесь нужны, чтобы валютные
 // остатки пересчитывались без обращения к серверу.
 const CBR_RATES_LOCAL = {
   "2025-12-31": {
@@ -3216,8 +3220,9 @@ const CBR_RATES_LOCAL = {
   },
 };
 
-// Собираем фрагменты текста со всех страниц вместе с координатами.
-async function pdfTextItems(file){
+// Фрагменты pdf.js -> ячейки {text,x0,x1,top}. Соседние фрагменты одной строки
+// склеиваем, если между ними меньше 3 единиц: так «6 184,01» остается одним числом.
+async function pdfPagesToCells(file){
   const pdfjsLib = await loadPdfJs();
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({data: buf}).promise;
@@ -3225,157 +3230,199 @@ async function pdfTextItems(file){
   for(let p = 1; p <= pdf.numPages; p++){
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
-    const items = [];
+    const raw = [];
     for(const it of content.items){
-      const str = (it.str || "").trim();
-      if(!str) continue;
-      items.push({str, x: it.transform[4], y: it.transform[5], w: it.width || 0});
+      const text = (it.str || "");
+      if(!text.trim()) continue;
+      const x0 = it.transform[4];
+      raw.push({text, x0, x1: x0 + (it.width || 0), top: -it.transform[5]});
     }
-    pages.push(items);
+    const byLine = new Map();
+    for(const r of raw){
+      const k = Math.round(r.top / 3);
+      if(!byLine.has(k)) byLine.set(k, []);
+      byLine.get(k).push(r);
+    }
+    const cells = [];
+    for(const [, line] of byLine){
+      line.sort((a, b) => a.x0 - b.x0);
+      let cur = null;
+      for(const r of line){
+        if(cur && r.x0 - cur.x1 <= 3){ cur.text += r.text; cur.x1 = Math.max(cur.x1, r.x1); }
+        else { if(cur) cells.push(cur); cur = {text: r.text, x0: r.x0, x1: r.x1, top: r.top}; }
+      }
+      if(cur) cells.push(cur);
+    }
+    pages.push(cells.map(c => ({...c, text: c.text.trim()})).filter(c => c.text));
   }
   return pages;
 }
 
-// Строки страницы: фрагменты с близким Y лежат на одной строке.
-function groupIntoLines(items){
-  const sorted = items.slice().sort((a, b) => (b.y - a.y) || (a.x - b.x));
-  const lines = [];
-  for(const it of sorted){
-    const last = lines[lines.length - 1];
-    if(last && Math.abs(last.y - it.y) <= 3){
-      last.items.push(it);
-      last.y = (last.y + it.y) / 2;
-    } else {
-      lines.push({y: it.y, items: [it]});
-    }
-  }
-  lines.forEach(l => l.items.sort((a, b) => a.x - b.x));
-  return lines;
+const RE_MONEY = /^-?\d{1,3}(?:[\s\u00A0]\d{3})*[.,-]\d{2}$|^-?\d+[.,-]\d{2}$/;
+const RE_ACC   = /^\d[\d\s]{18,30}$/;
+const RE_ISO   = /^[A-Z]{3}$/;
+const HEAD_RE  = {
+  balance:  /Остаток/i,
+  inflow:   /поступивш/i,
+  income:   /^Доход/i,
+  currency: /^Валют/i,
+};
+const METALS = new Set(["XAU","XAG","XPT","XPD"]);
+const LEGACY_CUR = {RUR:"RUB", BYR:"BYN", MRO:"MRU", STD:"STN", VEF:"VES", VED:"VES"};
+const CUR_PREFIX = [
+  ["РОССИЙСК","RUB"],["РУБЛ","RUB"],["ЕВРО","EUR"],["ДОЛЛАР","USD"],["ЮАН","CNY"],
+  ["КИТАЙСК","CNY"],["ФУНТ","GBP"],["ИЕН","JPY"],["ТЕНГЕ","KZT"],["ФРАНК","CHF"],
+  ["ЛИР","TRY"],["ДРАМ","AMD"],["СЕРЕБР","XAG"],["ЗОЛОТ","XAU"],["ПЛАТИН","XPT"],["ПАЛЛАДИ","XPD"],
+];
+function currencyOf(text){
+  const t = String(text || "").trim().toUpperCase().replace(/\s/g, "");
+  if(RE_ISO.test(t)) return LEGACY_CUR[t] || t;
+  for(const [p, c] of CUR_PREFIX) if(t.startsWith(p)) return c;
+  return null;
 }
-
-const RE_ACCOUNT = /^\d{20}$/;
-const RE_CURRENCY = /^[A-Z]{3}$/;
-const RE_MONEY = /^-?[\d\u00A0 ]+(?:[.,]\d{1,2})?$/;
-
-function parseMoney(s){
-  const n = Number(String(s).replace(/[\u00A0\s]/g, "").replace(",", "."));
+function moneyOf(text){
+  let t = String(text).replace(/[\s\u00A0]/g, "");
+  // «3 298-73» — копейки через дефис, встречается в справках Альфа-Банка
+  if(/^-?\d+-\d{2}$/.test(t)) t = t.replace(/-(\d{2})$/, ".$1");
+  else t = t.replace(",", ".");
+  const n = Number(t);
   return Number.isFinite(n) ? n : null;
 }
-
-// Ищем на странице заголовки колонок и запоминаем их X.
-// Заголовок часто разбит на несколько строк — берем X первого фрагмента.
-function findColumnAnchors(lines){
-  const anchors = [];
-  const want = [
-    {key: "balance",  re: /Остаток/i},
-    {key: "inflow",   re: /поступивш/i},
-    {key: "income",   re: /^Доход/i},
-    {key: "currency", re: /^Валюта/i},
-    {key: "opened",   re: /^Дата\b/i},
-    {key: "kind",     re: /^Вид\b/i},
-    {key: "number",   re: /^Номер\b/i},
-  ];
-  for(const line of lines){
-    for(const it of line.items){
-      for(const w of want){
-        if(w.re.test(it.str) && !anchors.some(a => a.key === w.key)){
-          anchors.push({key: w.key, x: it.x});
-        }
+function distTo(center, iv){
+  if(center >= iv[0] && center <= iv[1]) return 0;
+  return center < iv[0] ? iv[0] - center : center - iv[1];
+}
+// Заголовки колонок: ищем над первой строкой счета, берем ближайшие к таблице,
+// затем расширяем каждый диапазон соседними ячейками шапки — заголовок часто
+// разбит на две-три строки.
+function findColumns(pages){
+  for(const cells of pages){
+    const tops = cells.filter(c => RE_ACC.test(c.text)).map(c => c.top);
+    if(!tops.length) continue;
+    const first = Math.min(...tops);
+    const cand = {};
+    for(const c of cells){
+      if(c.top >= first - 2 || c.text.length > 60) continue;
+      for(const k of Object.keys(HEAD_RE)){
+        if(HEAD_RE[k].test(c.text) && (!cand[k] || c.top > cand[k].top)) cand[k] = c;
       }
     }
-  }
-  anchors.sort((a, b) => a.x - b.x);
-  return anchors;
-}
-
-// К какой колонке относится фрагмент: к последней, чей левый край не правее его.
-function columnOf(x, anchors){
-  let found = null;
-  for(const a of anchors){
-    if(x >= a.x - 4) found = a.key; else break;
-  }
-  return found;
-}
-
-// Разбираем одну страницу: возвращаем строки счетов.
-function parsePage(items, diag){
-  const lines = groupIntoLines(items);
-  const anchors = findColumnAnchors(lines);
-  const hasBalance = anchors.some(a => a.key === "balance");
-  const hasCurrency = anchors.some(a => a.key === "currency");
-  if(!hasBalance || !hasCurrency) return [];
-
-  diag.anchors = anchors.map(a => a.key + "@" + Math.round(a.x));
-
-  const rows = [];
-  for(const line of lines){
-    if(!line.items.some(it => RE_ACCOUNT.test(it.str))) continue;   // строка счета
-    const cells = {};
-    for(const it of line.items){
-      const col = columnOf(it.x, anchors);
-      if(!col) continue;
-      if(cells[col] === undefined) cells[col] = it.str;
+    if(!cand.balance || !cand.currency) continue;
+    const band = cells.filter(c => c.top < first - 2 && c.text.length <= 60
+                                && c.top > cand.balance.top - 40);
+    const cols = {};
+    for(const k of Object.keys(cand)){
+      let x0 = cand[k].x0, x1 = cand[k].x1;
+      for(const c of band) if(!(c.x1 < x0 - 2 || c.x0 > x1 + 2)){ x0 = Math.min(x0, c.x0); x1 = Math.max(x1, c.x1); }
+      cols[k] = [x0, x1];
     }
-    const currency = RE_CURRENCY.test(cells.currency || "") ? cells.currency : null;
-    const balRaw = cells.balance;
-    const amount = balRaw && RE_MONEY.test(balRaw) ? parseMoney(balRaw) : null;
-    rows.push({currency, amount, raw: {balance: balRaw, inflow: cells.inflow, income: cells.income}});
+    return cols;
   }
-  return rows;
+  return null;
+}
+function parseCells(pages){
+  const cols = findColumns(pages);
+  if(!cols) return null;
+  const moneyCols = {};
+  for(const k of ["balance","inflow","income"]) if(cols[k]) moneyCols[k] = cols[k];
+  const rows = [];
+  for(const cells of pages){
+    const byTop = new Map();
+    for(const c of cells){
+      const k = Math.round(c.top / 3);
+      if(!byTop.has(k)) byTop.set(k, []);
+      byTop.get(k).push(c);
+    }
+    for(const [, line] of [...byTop.entries()].sort((a,b)=>a[0]-b[0])){
+      let currency = null, balance = null;
+      let sawMoney = false;
+      for(const c of line){
+        const mid = (c.x0 + c.x1) / 2;
+        if(cols.currency && distTo(mid, cols.currency) === 0 && currency === null){
+          currency = currencyOf(c.text);
+        }
+        if(RE_MONEY.test(c.text)){
+          let best = null, bestD = Infinity;
+          for(const k of Object.keys(moneyCols)){
+            const d = distTo(mid, moneyCols[k]);
+            if(d < bestD){ bestD = d; best = k; }
+          }
+          if(bestD < 40){
+            sawMoney = true;
+            if(best === "balance" && balance === null) balance = moneyOf(c.text);
+          }
+        }
+      }
+      if(currency && sawMoney) rows.push({currency, balance});
+    }
+  }
+  return {cols, rows};
 }
 
-// Главная функция: разбирает справку целиком, либо возвращает null.
+// Банк определяем по ИНН, если он есть в документе, иначе по БИК, иначе по названию.
+function detectBank(allText){
+  const inn = (allText.match(/ИНН[\s:]*(\d{10})\b/) || [])[1];
+  if(inn && BANKS_RU.some(b => b.inn === inn)) return {bankInn: inn, bankName: null};
+  const bic = (allText.match(/БИК[\s:]*(\d{9})\b/) || [])[1];
+  if(bic){
+    const byBic = BANKS_RU.find(b => b.bic === bic);
+    if(byBic) return {bankInn: byBic.inn, bankName: byBic.name};
+  }
+  const low = allText.slice(0, 4000).toLowerCase();
+  for(const b of BANKS_RU){
+    for(const a of (b.aliases || [])) if(low.includes(a)) return {bankInn: b.inn, bankName: b.name};
+  }
+  return {bankInn: inn || null, bankName: null};
+}
+
+// Главная функция. Возвращает тот же объект, что и сервер, либо null — тогда
+// вызывающий код уходит на прежний путь через распознавание.
 async function parseStatementLocally(file, expectedDate){
   if(!file || file.type !== "application/pdf") return null;
 
-  const pages = await pdfTextItems(file);
-  const allText = pages.map(p => p.map(i => i.str).join(" ")).join("\n");
+  const pages = await pdfPagesToCells(file);
+  const allText = pages.map(p => p.map(c => c.text).join(" ")).join("\n");
+  const parsed = parseCells(pages);
 
-  const diag = {};
-  let rows = [];
-  for(const items of pages) rows = rows.concat(parsePage(items, diag));
-
-  console.log("[локальный разбор] колонки:", diag.anchors || "не найдены",
-              "| строк счетов:", rows.length);
-  console.table(rows.map(r => ({валюта: r.currency, остаток: r.raw.balance,
-                                поступления: r.raw.inflow, доход: r.raw.income})));
-
-  const usable = rows.filter(r => r.currency && r.amount !== null && r.amount !== 0);
-  if(!rows.length) return null;              // таблицу не нашли — пусть решает сервер
+  if(!parsed){
+    console.log("[разбор PDF] колонки не найдены — уходим на распознавание");
+    return null;
+  }
+  console.log("[разбор PDF] колонки:", JSON.stringify(parsed.cols),
+              "| строк счетов:", parsed.rows.length);
 
   // Отчетная дата: если нашли и она не та, дальше идти нельзя.
-  const dm = allText.match(/на\s+(\d{2})\.(\d{2})\.(\d{4})/);
+  const dm = allText.match(/(\d{2})\.(\d{2})\.(\d{4})\s*(?:на|23)/) || allText.match(/дата[^\d]{0,20}(\d{2})\.(\d{2})\.(\d{4})/i);
   const foundDate = dm ? `${dm[3]}-${dm[2]}-${dm[1]}` : null;
   if(expectedDate && foundDate && foundDate !== expectedDate){
     const ru = d => d.slice(8,10) + "." + d.slice(5,7) + "." + d.slice(0,4);
     throw new Error(`Справка составлена на ${ru(foundDate)}, а для декларации нужны данные на ${ru(expectedDate)}. Закажите в банке справку на нужную дату.`);
   }
 
-  const innMatch = allText.match(/ИНН[\s:]*(\d{10})\b/);
-  const bankInn = innMatch ? innMatch[1] : null;
-
-  // Пересчет валютных остатков: в справке они в рублях по курсу ЦБ.
   const rates = CBR_RATES_LOCAL[expectedDate] || null;
-  const balances = [];
-  const converted = [];
-  const notConverted = [];
-  for(const r of usable){
-    if(r.currency === "RUB"){ balances.push({currency: "RUB", amount: r.amount}); continue; }
+  const balances = [], converted = [], notConverted = [];
+  let metals = 0;
+  for(const r of parsed.rows){
+    if(!r.currency || !r.balance) continue;              // нули и пустые не нужны
+    if(METALS.has(r.currency)){ metals++; continue; }    // обезличенные металлические счета
+    if(r.currency === "RUB"){ balances.push({currency: "RUB", amount: r.balance}); continue; }
     const rate = rates && rates[r.currency];
     if(!rate){
       if(!notConverted.includes(r.currency)) notConverted.push(r.currency);
       continue;
     }
-    balances.push({currency: r.currency, amount: Math.round((r.amount / rate) * 100) / 100,
+    balances.push({currency: r.currency, amount: Math.round((r.balance / rate) * 100) / 100,
                    convertedFrom: "RUB"});
     if(!converted.includes(r.currency)) converted.push(r.currency);
   }
+  console.log("[разбор PDF] в декларацию:", balances.length,
+              "| металлические пропущены:", metals,
+              "| пересчитано:", converted.join(",") || "—");
+  if(!balances.length) return null;
 
-  if(!balances.length) return null;          // ничего пригодного — на сервер
-
-  console.log("[локальный разбор] итог:", balances.length, "строк, пересчитано:",
-              converted.join(",") || "—");
-  return {bankName: null, bankInn, balances, converted, notConverted, unitAssumed: false};
+  const bank = detectBank(allText);
+  return {bankName: bank.bankName, bankInn: bank.bankInn,
+          balances, converted, notConverted, unitAssumed: false};
 }
 
 // ---------- сам сценарий загрузки справки ----------
