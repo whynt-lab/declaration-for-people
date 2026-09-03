@@ -3229,13 +3229,20 @@ async function pdfPagesToCells(file){
   const pages = [];
   for(let p = 1; p <= pdf.numPages; p++){
     const page = await pdf.getPage(p);
+    // Половина справок (Сбер, Т-Банк, Яндекс) отдается страницами, повернутыми
+    // на 90 градусов. В сыром transform у них строки и столбцы поменяны местами:
+    // заголовок колонки и все ее значения оказываются на одной «строке». Поэтому
+    // координаты обязательно прогоняем через viewport — он учитывает поворот и
+    // дает систему, где X растет вправо, а Y вниз, как на экране.
+    const viewport = page.getViewport({scale: 1});
     const content = await page.getTextContent();
     const raw = [];
     for(const it of content.items){
       const text = (it.str || "");
       if(!text.trim()) continue;
-      const x0 = it.transform[4];
-      raw.push({text, x0, x1: x0 + (it.width || 0), top: -it.transform[5]});
+      const tx = pdfjsLib.Util.transform(viewport.transform, it.transform);
+      const x0 = tx[4];
+      raw.push({text, x0, x1: x0 + (it.width || 0), top: tx[5]});
     }
     const byLine = new Map();
     for(const r of raw){
