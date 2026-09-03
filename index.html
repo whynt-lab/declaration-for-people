@@ -3,6 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+   (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+   m[i].l=1*new Date();
+   for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+   k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+   (window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=112263918', 'ym');
+
+   /* trackHash обязателен: навигация в инструменте идет по hash-роутингу.
+      Поля с персональными данными закрыты классами ym-hide-content и ym-disable-keys. */
+   ym(112263918, 'init', {webvisor:true, trackHash:true, clickmap:true, accurateTrackBounce:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/112263918" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
 <title>Декларация 250 — структура</title>
 <style>
   :root{
@@ -648,8 +662,8 @@
 
     <h2>4. Что происходит с вашими данными</h2>
 
-    <p><strong>4.1. Всё, что вы вводите руками, остаётся в браузере.</strong> Регистрации на сайте нет, серверной базы у нас тоже нет. ИИН, имя, счета, суммы — всё это хранится в памяти вашего браузера на вашем устройстве. Мы этого не видим.</p>
-    <p>Отсюда следует важное: браузер ненадёжен. Очистка истории, другое устройство, приватное окно — и заполненное пропадёт. Кнопка «Сохранить черновик» скачивает файл вам на устройство; этот файл тоже никуда не отправляется. Резервных копий у нас нет, восстановить ничего мы не сможем.</p>
+    <p><strong>4.1. Все, что вы вводите руками, остается в браузере.</strong> Регистрации на сайте нет, серверной базы у нас тоже нет. ИИН, имя, счета, суммы — все это хранится в памяти вашего браузера на вашем устройстве. Содержимое этих полей к нам не приходит.</p>
+    <p>Отсюда следует важное: браузер ненадежен. Очистка истории, другое устройство, приватное окно — и заполненное пропадет. Кнопка «Сохранить черновик» скачивает файл вам на устройство; этот файл тоже никуда не отправляется. Резервных копий у нас нет, восстановить ничего мы не сможем.</p>
 
     <p><strong>4.2. Единственное исключение — загрузка справки из банка.</strong> Когда вы нажимаете «Загрузить справку», файл покидает браузер. Иначе распознать его невозможно. Происходит следующее:</p>
     <ol>
@@ -662,11 +676,20 @@
     <p>В справке обычно есть ваше имя, номера счетов и остатки, иногда ИИН или паспортные данные. Мы не знаем заранее, что в вашем файле, поэтому исходите из того, что документ уходит целиком, как есть.</p>
     <p><strong>Если вас это не устраивает — не пользуйтесь загрузкой.</strong> Всё то же самое вводится руками, результат будет ровно тот же.</p>
 
-    <p><strong>4.3. Чего мы не делаем.</strong> Не заводим аккаунты. Не ставим аналитику — мы не знаем, сколько людей пользуется сайтом. Не показываем рекламу и не продаём данные. Не отправляем ничего в налоговую: готовый файл вы скачиваете и загружаете в Кабинет налогоплательщика сами. Никому, кроме описанного в 4.2, данные не передаём.</p>
+    <p><strong>4.3. Мы смотрим статистику посещений.</strong> На сайте стоит Яндекс Метрика. Она показывает, сколько людей заходит, откуда приходят и на каком шаге закрывают вкладку. Без этого мы не видим, где помощник непонятен и что в нем чинить.</p>
+    <p>Метрика не только считает визиты — она записывает, как вы двигались по странице: клики, прокрутку, какие разделы открывали. Такая запись потом воспроизводится как видео. Поэтому важно, что в нее <strong>не</strong> попадает:</p>
+    <ul>
+      <li>содержимое всех полей ввода — вместо ИИН, имени, номеров счетов и сумм в записи видны звездочки;</li>
+      <li>список выбора банка и уведомление после распознавания справки — по записи не видно, какой банк вы искали и что нашлось в вашем документе;</li>
+      <li>сам файл справки — он в запись не попадает, его путь описан в 4.2.</li>
+    </ul>
+    <p>Метрика ставит в вашем браузере свои куки, чтобы отличать новых посетителей от вернувшихся, и видит ваш IP-адрес. Данные обрабатывает ООО «Яндекс», серверы находятся в России. Если вам это не подходит — Метрику блокируют обычные блокировщики рекламы, сайт при этом работает полностью.</p>
 
-    <p><strong>4.4. Что видят сторонние сервисы.</strong> Как и на любом сайте, ваш IP-адрес видят хостинг (GitHub Pages), проверка «вы не робот» (Cloudflare Turnstile) и сервис иконок флагов (flagcdn.com). Того, что вы заполнили, не получает ни один из них.</p>
+    <p><strong>4.4. Чего мы не делаем.</strong> Не заводим аккаунты. Не показываем рекламу и не продаем данные. Не отправляем ничего в налоговую: готовый файл вы скачиваете и загружаете в Кабинет налогоплательщика сами. Никому, кроме описанного в 4.2 и 4.3, данные не передаем.</p>
 
-    <p><strong>4.5. Как всё удалить.</strong> Нажмите «Начать с нуля», либо очистите данные сайта средствами браузера, либо просто откройте сайт в приватном окне — тогда после закрытия окна не останется ничего.</p>
+    <p><strong>4.5. Что видят сторонние сервисы.</strong> Как и на любом сайте, ваш IP-адрес видят хостинг (GitHub Pages), проверка «вы не робот» (Cloudflare Turnstile), сервис иконок флагов (flagcdn.com) и Яндекс Метрика. Того, что вы заполнили, не получает ни один из них.</p>
+
+    <p><strong>4.6. Как все удалить.</strong> Нажмите «Начать с нуля», либо очистите данные и куки сайта средствами браузера, либо просто откройте сайт в приватном окне — тогда после закрытия окна не останется ничего.</p>
 
     <p><strong>5. Мы не даём гарантий.</strong> Сайт предоставляется «как есть». Мы стараемся, но не обещаем, что:</p>
     <ul>
@@ -686,7 +709,7 @@
     <p><strong>9. Право.</strong> К этим условиям применяется законодательство Республики Казахстан.</p>
 
     <p>Вопросы: <a href="mailto:whynt.lab@gmail.com">whynt.lab@gmail.com</a></p>
-    <p class="terms-updated">Последнее изменение: 31 августа 2026 года</p>
+    <p class="terms-updated">Последнее изменение: 3 сентября 2026 года</p>
   </div>
 </div>
 
@@ -849,7 +872,7 @@
     <button class="btn primary" onclick="saveProgress()">Сохранить черновик</button>
   </div>
 </div>
-<div class="app-privacy-line">🔒 Ваши ответы в безопасности — они никуда не передаются</div>
+<div class="app-privacy-line">🔒 Мы не получаем ваши ответы, они остаются только в этом браузере.</div>
 
 <!-- ============ HOME ============ -->
 <div id="view-home" class="home-wrap hidden">
@@ -2058,7 +2081,7 @@ function genericComboHTML(comboId, optionsType, currentCode, placeholder, onSele
         oninput="genericComboSearch('${comboId}',this.value)"
         onfocus="genericComboSearch('${comboId}',this.value)"
         onblur="genericComboBlur('${comboId}')">
-      <div id="${comboId}-list" class="combo-list"></div>
+      <div id="${comboId}-list" class="combo-list ym-hide-content"></div>
     </div>
   `;
 }
@@ -2666,7 +2689,7 @@ function bankAutocompleteFieldHTML(sectionKey, itemId, mf, value){
           oninput="bankDraftInput('${sectionKey}','${itemId}','${mf.key}',this)"
           onfocus="bankDraftSearch('${sectionKey}','${itemId}','${mf.key}',this.value)"
           onblur="bankDraftBlur('${fieldId}')">
-        <div id="${fieldId}-list" class="combo-list"></div>
+        <div id="${fieldId}-list" class="combo-list ym-hide-content"></div>
       </div>
     </div>
   `;
@@ -2878,7 +2901,7 @@ function showToast(msg, type, sticky){
     el.id = "toast";
     document.body.appendChild(el);
   }
-  el.className = "toast toast-" + (type || "info");
+  el.className = "toast ym-hide-content toast-" + (type || "info");
   el.textContent = msg;
   el.style.display = "block";
   clearTimeout(el._hideTimer);
@@ -3738,7 +3761,7 @@ function renderFinish(){
       <div class="field-row">
         <div class="field"><label>ИИН</label>
           <input type="text" inputmode="numeric" placeholder="000000000000" value="${esc(profile.iin)}"
-            class="${profileFieldError('iin', profile.iin) ? 'cell-invalid' : ''}"
+            class="ym-hide-content ym-disable-keys ${profileFieldError('iin', profile.iin) ? 'cell-invalid' : ''}"
             oninput="updateProfileQuiet('iin',this.value,this)"
             onblur="onProfileBlur('iin',this.value,this)">
           <div class="cell-error" id="profile-err-iin">${profileFieldError('iin', profile.iin)}</div></div>
@@ -3752,13 +3775,13 @@ function renderFinish(){
       <div class="field-row">
         <div class="field"><label>Телефон</label>
           <input type="text" inputmode="tel" placeholder="+7" value="${esc(profile.phone)}"
-            class="${profileFieldError('phone', profile.phone) ? 'cell-invalid' : ''}"
+            class="ym-hide-content ym-disable-keys ${profileFieldError('phone', profile.phone) ? 'cell-invalid' : ''}"
             oninput="updateProfileQuiet('phone',this.value,this)"
             onblur="onProfileBlur('phone',this.value,this)">
           <div class="cell-error" id="profile-err-phone">${profileFieldError('phone', profile.phone)}</div></div>
         <div class="field"><label>Email</label>
           <input type="text" inputmode="email" placeholder="you@example.com" value="${esc(profile.email)}"
-            class="${profileFieldError('email', profile.email) ? 'cell-invalid' : ''}"
+            class="ym-hide-content ym-disable-keys ${profileFieldError('email', profile.email) ? 'cell-invalid' : ''}"
             oninput="updateProfileQuiet('email',this.value,this)"
             onblur="onProfileBlur('email',this.value,this)">
           <div class="cell-error" id="profile-err-email">${profileFieldError('email', profile.email)}</div></div>
