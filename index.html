@@ -3020,7 +3020,11 @@ async function callExtractProxy(mediaType, base64Data){
     resp = await fetch(PROXY_URL, {
       method: "POST",
       headers: {"content-type": "application/json"},
-      body: JSON.stringify({mediaType, base64: base64Data, turnstileToken}),
+      // Отчетную дату считает сайт, а не распознавание: она однозначно следует
+      // из года декларации. Сервер по ней берет курсы ЦБ и проверяет, что человек
+      // заказал справку на нужную дату.
+      body: JSON.stringify({mediaType, base64: base64Data, turnstileToken,
+                            reportDate: `${reportYear - 1}-12-31`}),
     });
   }catch(e){
     throw new Error("Не удалось связаться с сервером распознавания");
@@ -3074,14 +3078,17 @@ function validateExtraction(result){
     if(!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > MAX_ACCOUNT_AMOUNT){
       skipped++; return;
     }
-    balances.push({currency, amount});
+    balances.push({currency, amount, converted: b.convertedFrom === "RUB"});
   });
 
   const bankName = cleanExtractedText(result.bankName, MAX_BANK_NAME_LEN);
   const innDigits = String(result.bankInn == null ? "" : result.bankInn).replace(/\D/g, "");
   const bankId = innDigits.length === 10 ? innDigits : "";   // ИНН — ровно 10 цифр, иначе не берем
 
-  return {balances, bankName, bankId, skipped};
+  const unitAssumed = result.unitAssumed === true;
+  const converted = Array.isArray(result.converted) ? result.converted.filter(c => typeof c === "string").slice(0, 20) : [];
+  const notConverted = Array.isArray(result.notConverted) ? result.notConverted.filter(c => typeof c === "string").slice(0, 20) : [];
+  return {balances, bankName, bankId, skipped, converted, notConverted, unitAssumed};
 }
 
 // ---------- применяем распознанное к состоянию раздела ----------
@@ -3138,8 +3145,20 @@ function applyExtractionResult(sectionKey, itemId, gi, result){
   const tail = checked.skipped
     ? ` Не удалось разобрать строк: ${checked.skipped} — проверьте справку и добавьте их вручную.`
     : "";
-  showToast(`Готово: ${bankName} — добавлено строк: ${balances.length}. Сверьте со справкой.${tail}`,
-            checked.skipped ? "warn" : "ok");
+  // Российские справки печатают валютные остатки в рублях. Мы вернули их обратно
+  // в валюту счета по курсу ЦБ — это оценка, и молчать об этом нельзя: в декларацию
+  // уходит число, которого в самой справке не было.
+  const conv = checked.converted.length
+    ? (checked.unitAssumed
+        ? ` В справке не написано, в какой валюте напечатаны суммы. Считаем, что в рублях: остатки в ${checked.converted.join(", ")} пересчитаны по курсу ЦБ. Обязательно сверьте их со справкой.`
+        : ` Остатки в ${checked.converted.join(", ")} пересчитаны из рублей по курсу ЦБ — это оценка, проверьте суммы.`)
+    : "";
+  const miss = checked.notConverted.length
+    ? ` Счета в ${checked.notConverted.join(", ")} не добавлены: не нашли курс на отчетную дату — внесите вручную.`
+    : "";
+  const warn = checked.skipped || conv || miss;
+  showToast(`Готово: ${bankName} — добавлено строк: ${balances.length}. Сверьте со справкой.${tail}${conv}${miss}`,
+            warn ? "warn" : "ok", Boolean(conv || miss));
 }
 
 // ---------- сам сценарий загрузки справки ----------
