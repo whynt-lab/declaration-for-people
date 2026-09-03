@@ -2636,6 +2636,11 @@ function gGroupDraft(sectionKey, itemId, cfg){
 
 function gMidDraft(sectionKey, itemId, cfg){
   const d = state[sectionKey][itemId].draft;
+  // Распознавание справок сделано под российскую форму «для госслужащих»:
+  // и разбор колонок, и справочник банков, и пересчет валют по курсу ЦБ.
+  // Для других стран кнопка не показывается — она там все равно не сработает.
+  const draftCountry = ((state[sectionKey][itemId].groups[d.gi] || {}).gval) || "";
+  const canUpload = cfg.mid.allowUpload && draftCountry === "RU";
 
   // банк выбирается из справочника: два поля с автодополнением, свободный текст тоже принимается
   if(cfg.mid.pickFromDirectory){
@@ -2651,7 +2656,7 @@ function gMidDraft(sectionKey, itemId, cfg){
             onclick="gCommitDraft('${sectionKey}','${itemId}')">Добавить</button>
           <button class="btn" onclick="gCancelDraft('${sectionKey}','${itemId}')">Отмена</button>
         </div>
-        ${cfg.mid.allowUpload ? `
+        ${canUpload ? `
           <div class="acc-draft-or">или</div>
           <button class="btn upload-stmt-btn acc-upload-wide" onclick="gUploadFromDraft('${sectionKey}','${itemId}')">🪄 Заполнить из справки</button>
         ` : ""}
@@ -2823,7 +2828,9 @@ function gCommitDraft(sectionKey, itemId){
     if(!d.data[cfg.mid.fields[0].key]) return; // первое поле обязательно
     const mid = {rows:[{}]};
     cfg.mid.fields.forEach(mf=>{ mid[mf.key] = d.data[mf.key] || ""; });
-    st.groups[d.gi].mids.push(mid);
+    // Форма добавления показывается НАД списком, поэтому и новый банк встает
+    // первым: иначе после нажатия «Добавить» карточка прыгает вниз списка.
+    st.groups[d.gi].mids.unshift(mid);
     st.draft = null;
   }
   renderSection(sectionKey);
@@ -3112,7 +3119,7 @@ function applyExtractionResult(sectionKey, itemId, gi, result){
   let mid = group.mids.find(m => m.bankId && bankId && m.bankId === bankId);
   if(!mid){
     mid = {bankName, bankId, rows:[]};
-    group.mids.push(mid);
+    group.mids.unshift(mid);   // тот же порядок, что и при добавлении вручную
   }
   balances.forEach(b=>{
     mid.rows.push({amount:String(b.amount), currency:String(b.currency).toUpperCase()});
