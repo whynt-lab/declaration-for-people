@@ -3292,34 +3292,66 @@ function distTo(center, iv){
   if(center >= iv[0] && center <= iv[1]) return 0;
   return center < iv[0] ? iv[0] - center : center - iv[1];
 }
-// Заголовки колонок: ищем над первой строкой счета, берем ближайшие к таблице,
-// затем расширяем каждый диапазон соседними ячейками шапки — заголовок часто
-// разбит на две-три строки.
+// Строки страницы: последовательная кластеризация по Y, а не округление —
+// иначе две ячейки одной строки могут попасть в разные корзины.
+function groupLines(cells){
+  const sorted = cells.slice().sort((a, b) => a.top - b.top || a.x0 - b.x0);
+  const lines = [];
+  for(const c of sorted){
+    const last = lines[lines.length - 1];
+    if(last && Math.abs(last.top - c.top) <= 3){ last.items.push(c); }
+    else lines.push({top: c.top, items: [c]});
+  }
+  for(const l of lines) l.items.sort((a, b) => a.x0 - b.x0);
+  return lines;
+}
+
+// Шапку таблицы ищем не по длине текста и не по строке счета, а по совпадению:
+// в полосе высотой ~25 единиц должны встретиться сразу несколько заголовков.
+// Во вводных абзацах слово «Остаток» встречается в одиночку, и полоса не наберет
+// нужного числа разных ключей.
 function findColumns(pages){
+  let best = null;
   for(const cells of pages){
-    const tops = cells.filter(c => RE_ACC.test(c.text)).map(c => c.top);
-    if(!tops.length) continue;
-    const first = Math.min(...tops);
-    const cand = {};
-    for(const c of cells){
-      if(c.top >= first - 2 || c.text.length > 60) continue;
-      for(const k of Object.keys(HEAD_RE)){
-        if(HEAD_RE[k].test(c.text) && (!cand[k] || c.top > cand[k].top)) cand[k] = c;
+    const lines = groupLines(cells);
+    for(let i = 0; i < lines.length; i++){
+      const band = [];
+      for(let j = i; j < lines.length && lines[j].top - lines[i].top <= 25; j++){
+        band.push(...lines[j].items);
+      }
+      const hit = {};
+      for(const c of band){
+        for(const k of Object.keys(HEAD_RE)){
+          if(HEAD_RE[k].test(c.text) && (!hit[k] || c.x0 < hit[k].x0)) hit[k] = c;
+        }
+      }
+      const score = Object.keys(hit).length;
+      if(!hit.balance || !hit.currency || score < 3) continue;
+      if(!best || score > best.score){
+        // Диапазон колонки — объединение всех ячеек полосы, пересекающихся с якорем
+        const cols = {};
+        for(const k of Object.keys(hit)){
+          let x0 = hit[k].x0, x1 = hit[k].x1;
+          let grew = true;
+          while(grew){
+            grew = false;
+            for(const c of band){
+              if(c.text.length > 60) continue;
+              if(!(c.x1 < x0 - 2 || c.x0 > x1 + 2) && (c.x0 < x0 - 2 || c.x1 > x1 + 2)){
+                x0 = Math.min(x0, c.x0); x1 = Math.max(x1, c.x1); grew = true;
+              }
+            }
+          }
+          cols[k] = [x0, x1];
+        }
+        best = {score, cols};
       }
     }
-    if(!cand.balance || !cand.currency) continue;
-    const band = cells.filter(c => c.top < first - 2 && c.text.length <= 60
-                                && c.top > cand.balance.top - 40);
-    const cols = {};
-    for(const k of Object.keys(cand)){
-      let x0 = cand[k].x0, x1 = cand[k].x1;
-      for(const c of band) if(!(c.x1 < x0 - 2 || c.x0 > x1 + 2)){ x0 = Math.min(x0, c.x0); x1 = Math.max(x1, c.x1); }
-      cols[k] = [x0, x1];
-    }
-    return cols;
+    if(best) break;
   }
-  return null;
+  return best ? best.cols : null;
 }
+
 function parseCells(pages){
   const cols = findColumns(pages);
   if(!cols) return null;
@@ -3327,13 +3359,8 @@ function parseCells(pages){
   for(const k of ["balance","inflow","income"]) if(cols[k]) moneyCols[k] = cols[k];
   const rows = [];
   for(const cells of pages){
-    const byTop = new Map();
-    for(const c of cells){
-      const k = Math.round(c.top / 3);
-      if(!byTop.has(k)) byTop.set(k, []);
-      byTop.get(k).push(c);
-    }
-    for(const [, line] of [...byTop.entries()].sort((a,b)=>a[0]-b[0])){
+    for(const ln of groupLines(cells)){
+      const line = ln.items;
       let currency = null, balance = null;
       let sawMoney = false;
       for(const c of line){
@@ -3358,6 +3385,8 @@ function parseCells(pages){
   }
   return {cols, rows};
 }
+
+
 
 // Банк определяем по ИНН, если он есть в документе, иначе по БИК, иначе по названию.
 function detectBank(allText){
@@ -3385,7 +3414,16 @@ async function parseStatementLocally(file, expectedDate){
   const parsed = parseCells(pages);
 
   if(!parsed){
+    // Без этого вывода непонятно, что именно не сошлось: сколько ячеек увидел
+    // pdf.js, как они склеились и есть ли вообще заголовки на странице.
     console.log("[разбор PDF] колонки не найдены — уходим на распознавание");
+    console.log("[разбор PDF] страниц:", pages.length, "| ячеек на 1-й:", (pages[0] || []).length);
+    const head = (pages[0] || []).slice(0, 60)
+      .map(c => `${Math.round(c.top)}|${Math.round(c.x0)}-${Math.round(c.x1)}|${c.text}`);
+    console.log("[разбор PDF] первые ячейки:\n" + head.join("\n"));
+    const hits = (pages[0] || []).filter(c => /Остаток|поступивш|Валют|^Доход/i.test(c.text))
+      .map(c => `${Math.round(c.top)}|${Math.round(c.x0)}-${Math.round(c.x1)}|${c.text.slice(0,60)}`);
+    console.log("[разбор PDF] ячейки с ключевыми словами:\n" + (hits.join("\n") || "нет"));
     return null;
   }
   console.log("[разбор PDF] колонки:", JSON.stringify(parsed.cols),
