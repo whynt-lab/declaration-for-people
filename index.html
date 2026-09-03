@@ -166,7 +166,13 @@
   .nav-item .label{display:flex;align-items:center;gap:8px;}
   .sidebar-divider{height:1px;background:var(--border);margin:12px 6px;}
 
-  .content{flex:1;padding:28px 32px;max-width:1040px;}
+  /* min-width:0 обязателен: без него у флекс-элемента "автоматический минимум"
+     считается по самому широкому потомку внутри, даже если у этого потомка есть
+     свой overflow-x:auto. Из-за этого широкая таблица где-то в глубине верстки
+     раздвигала не саму себя (у нее прокрутка была), а этот блок целиком — и
+     мобильный браузер зумил всю страницу, чтобы все уместить. Обертка таблицы
+     сама по себе проблему не решала: упирались не в неё, а именно в это. */
+  .content{flex:1;min-width:0;padding:28px 32px;max-width:1040px;}
   .narrow-col{max-width:640px;}
   .content h2{font-size:20px;margin:0 0 4px;}
   .content .subtitle{font-size:13px;color:var(--muted);margin:0 0 24px;}
@@ -333,7 +339,14 @@
   .acc-delete-link:hover{text-decoration:underline;}
 
   .acc-banks-block{padding:16px 18px;}
-  .acc-banks-header{display:flex;align-items:center;gap:14px;}
+  /* flex-shrink:0 на кнопке справа означает, что вся нехватка места ложится
+     на текстовый блок слева — у него min-width:0, и он готов сжаться хоть до
+     нуля. На узком экране это давало текстовую колонку уже одного слова, и
+     каждое слово переносилось на свою строку. flex-wrap решает это тем же
+     способом, что и раньше для строки "Название банка / ИНН": если в ряд не
+     помещается, кнопка целиком уходит на новую строку, а текст получает всю
+     ширину карточки и переносится нормально, по несколько слов на строку. */
+  .acc-banks-header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   .acc-banks-actions{display:flex;gap:8px;flex-shrink:0;}
   .upload-stmt-btn{background:#E3ECF7;border-color:#C7D6EC;color:#26456E;}
   .upload-stmt-btn:hover{background:#D5E2F4;}
@@ -346,8 +359,12 @@
     margin:14px 0 0;border:1px solid var(--border);
     border-radius:9px;background:var(--surface);overflow:visible;
   }
+  /* тот же паттерн, что чинили в .acc-draft-bankhead (форма добавления), но
+     здесь — заголовок уже СОХРАНЕННОГО банка. Я тогда поправил только форму
+     добавления и не заметил, что у отображения готовой карточки те же поля
+     верстаются отдельным, непочиненным правилом. */
   .acc-summary-bank-head{
-    display:flex;align-items:flex-start;gap:10px;
+    display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;
     padding:12px 14px;background:#E7ECE8;border-bottom:1px solid var(--border);
     border-radius:9px 9px 0 0;
   }
@@ -379,7 +396,7 @@
   /* активная форма — ровно одна на экране */
   .acc-draft{
     background:var(--surface);border:1px solid var(--accent);border-radius:9px;
-    padding:14px;margin:12px 0 0;max-width:440px;
+    padding:14px;margin:12px 0 0;max-width:440px;overflow:hidden;
     animation:formPanelIn .2s ease;
   }
   .acc-draft-title{font-size:13px;font-weight:600;margin-bottom:10px;}
@@ -398,7 +415,7 @@
   .btn:disabled{opacity:.45;cursor:not-allowed;}
   .acc-draft-fields{display:flex;gap:8px;flex-wrap:wrap;}
   .acc-draft-fields>*{flex:1;min-width:150px;}
-  .acc-draft-actions{display:flex;gap:8px;margin-top:12px;}
+  .acc-draft-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
 
   /* убираем стрелочки у числовых полей везде на сайте */
   input[type=number]::-webkit-outer-spin-button,
@@ -468,12 +485,18 @@
     padding:18px;margin-top:20px;
   }
   .profile-form h3{font-size:15px;margin:0 0 14px;}
-  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;}
+  /* minmax(0,1fr), а не просто 1fr: у grid-колонки без явного минимума он
+     по умолчанию auto — то есть колонка не сжимается уже собственной ширины
+     инпута без атрибута width (у него она браузерная, около 180px). На двух
+     колонках это не помещается на телефоне, и вторая колонка (ФИО, Email)
+     вылезает за край экрана — тот же класс бага, что чинили в .content, но
+     здесь это grid, а не flex, поэтому лечится другим свойством. */
+  .field-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:10px;}
   .field{display:flex;flex-direction:column;gap:4px;}
   .field label{font-size:11.5px;color:var(--muted);}
   .field .cell-error{margin-top:2px;}
   .field input, .field select{
-    border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;
+    width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;
     font-family:inherit;background:var(--surface);
   }
   .field select{cursor:pointer;}
