@@ -128,12 +128,19 @@
     width:var(--sidebar-w);flex-shrink:0;background:var(--surface);
     border-right:1px solid var(--border);padding:16px 10px;
   }
-  .sidebar-toggle{display:none;}
+  /* .topbar .icon-btn задает display:flex и весит больше (два класса против
+     одного), поэтому простое .sidebar-toggle{display:none} им перебивалось —
+     кнопка показывалась всегда, в том числе на десктопе и на главной.
+     Уравниваем вес: .topbar .sidebar-toggle — тоже два класса, и правило
+     стоит ниже, значит выигрывает. */
+  .topbar .sidebar-toggle{display:none;}
   .sidebar-overlay{display:none;}
   /* на узких экранах сайдбар+контент не помещаются рядом — превращаем сайдбар
      в выезжающую панель поверх контента, а не пытаемся сжать всё в один ряд */
   @media(max-width:900px){
-    .sidebar-toggle{display:flex;}
+    .topbar .sidebar-toggle{display:flex;}
+    /* на экранах, где сайдбара нет в принципе (главная), кнопка бесполезна */
+    .topbar .sidebar-toggle.no-sidebar{display:none;}
     .sidebar{
       position:fixed;top:49px;left:0;bottom:0;z-index:120;width:280px;max-width:85vw;
       transform:translateX(-100%);transition:transform .2s ease;
@@ -182,9 +189,16 @@
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     margin-bottom:8px;overflow:hidden;
   }
+  /* Статус держим справа всегда: переносится заголовок, а не бейдж. Для этого
+     заголовку даем право сжиматься (min-width:0 + перенос слов), а бейджу —
+     запрет на сжатие. flex-wrap убран: с ним бейдж уезжал под заголовок, и
+     статусы у соседних карточек оказывались в разных местах. */
   .q-card-head{
-    padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;
+    padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;cursor:pointer;
   }
+  .q-card-head > .q-card-title{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;}
+  .q-card-head > .q-card-badge,
+  .q-card-head > .collapse-btn{flex:0 0 auto;}
   .q-card-head:hover{background:#FBFCFB;}
   .q-card-title{font-size:14px;font-weight:500;}
   .q-card-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
@@ -277,7 +291,7 @@
   .bot-bubble.thinking span:nth-child(2){animation-delay:.15s;}
   .bot-bubble.thinking span:nth-child(3){animation-delay:.3s;}
   @keyframes botDot{0%,80%,100%{transform:translateY(0);opacity:.35;}40%{transform:translateY(-4px);opacity:1;}}
-  .decision-actions{display:flex;gap:8px;margin-bottom:10px;}
+  .decision-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
   .inline-decision{margin-left:40px;margin-top:-4px;}
   .inline-decision .decision-actions{margin-bottom:2px;}
   .undo{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;}
@@ -327,10 +341,12 @@
     margin-bottom:16px;overflow:visible;
   }
   .acc-country-top{
-    display:flex;align-items:flex-end;justify-content:space-between;gap:14px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;
     padding:16px 18px;border-bottom:1px solid var(--border);
   }
-  .acc-country-field{flex:0 0 260px;}
+  /* было flex:0 0 260px — жесткие 260px без права сжиматься. Во внутренней
+     карточке на телефоне столько нет, и поле выезжало за ее правый край. */
+  .acc-country-field{flex:1 1 220px;min-width:0;max-width:260px;}
   .acc-field-label{font-size:11.5px;color:var(--muted);margin-bottom:5px;}
   .acc-delete-link{
     background:none;border:none;color:var(--warn);cursor:pointer;
@@ -350,7 +366,13 @@
   .acc-banks-actions{display:flex;gap:8px;flex-shrink:0;}
   .upload-stmt-btn{background:#E3ECF7;border-color:#C7D6EC;color:#26456E;}
   .upload-stmt-btn:hover{background:#D5E2F4;}
-  .acc-banks-text{flex:1;min-width:0;}
+  /* flex:1 — это flex:1 1 0%, то есть базовая ширина НОЛЬ. Перенос на новую
+     строку срабатывает, только когда базовая ширина не помещается, а ноль
+     помещается всегда — поэтому flex-wrap на родителе тут не работал вовсе,
+     и текст просто сжимался в колонку шириной в одно слово. Задаем реальную
+     базовую ширину: если 220px рядом с кнопкой не помещаются, кнопка уходит
+     на следующую строку, а тексту достается вся ширина. */
+  .acc-banks-text{flex:1 1 220px;min-width:0;}
   .acc-banks-title{font-size:13.5px;font-weight:700;margin-bottom:2px;}
   .acc-banks-sub{font-size:12px;color:var(--muted);}
   .acc-add-bank-btn{flex-shrink:0;font-size:12.5px;padding:8px 14px;}
@@ -369,7 +391,7 @@
     border-radius:9px 9px 0 0;
   }
   .acc-bank-field-name{flex:1;min-width:130px;}
-  .acc-bank-field-inn{flex:0 0 170px;}
+  .acc-bank-field-inn{flex:1 1 170px;min-width:0;max-width:170px;}
   .acc-bank-name-input{font-weight:600;}
   .acc-remove-bank{margin-top:22px;}
   .acc-entries-wrap{padding:12px 14px;}
@@ -380,7 +402,6 @@
   .acc-summary-entry{
     display:flex;align-items:baseline;gap:8px;padding:3px 0;font-size:13px;
   }
-  .acc-entry-amount{font-weight:600;}
   .acc-entry-currency{color:var(--muted);font-size:12px;flex:1;}
   .acc-remove-btn{
     background:none;border:none;color:#C9CFCB;cursor:pointer;
@@ -467,7 +488,7 @@
 
   /* ---------- excluded (struck-through) row ---------- */
   .q-card.excluded{
-    display:flex;justify-content:space-between;align-items:center;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
     padding:10px 16px;background:transparent;border-style:dashed;opacity:.7;
   }
   .q-card-title.strike{text-decoration:line-through;color:var(--muted);font-size:13.5px;font-weight:400;}
@@ -475,11 +496,25 @@
   .excluded-note .undo{color:var(--accent);}
 
   /* ---------- finish screen ---------- */
+  /* flex-wrap убран намеренно: с ним статус уезжал под заголовок, и у соседних
+     строк плашки оказывались в разных местах. Переносится заголовок, статус
+     всегда справа — та же схема, что у карточек разделов. */
   .summary-row{
-    display:flex;justify-content:space-between;align-items:center;
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
     padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;font-size:13.5px;
   }
-  .summary-row .fix{font-size:12.5px;color:var(--accent);cursor:pointer;}
+  .summary-row.is-clickable{cursor:pointer;}
+  .summary-row.is-clickable:hover{background:#FBFCFB;border-color:var(--accent);}
+  .summary-title{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;}
+  /* цвета статусов: розовый — не начат, голубой — в процессе, зеленый — готово */
+  .summary-status{
+    flex:0 0 auto;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;
+  }
+  .summary-status.st-notstarted{background:#FBE4EE;color:#B03060;}
+  .summary-status.st-inprogress,
+  .summary-status.st-hasgaps{background:#E3ECF7;color:#2F5D8A;}
+  .summary-status.st-ready,
+  .summary-status.st-noassets{background:#E3F0E9;color:#2F6F5E;}
   .profile-form{
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     padding:18px;margin-top:20px;
@@ -1218,6 +1253,12 @@ function showOnlyView(id){
   const showHeader = id === "view-home" || id === "view-app";
   const topbar = document.querySelector(".topbar");
   if(topbar) topbar.classList.toggle("hidden", !showHeader);
+  // Кнопка «☰» открывает боковой список разделов. На главной сайдбара нет вовсе,
+  // поэтому там она ничего не делает — прячем. Ширину экрана при этом не трогаем:
+  // за нее отвечает media-запрос, он же прячет кнопку на широких экранах, где
+  // сайдбар и так виден целиком.
+  const toggle = document.querySelector(".sidebar-toggle");
+  if(toggle) toggle.classList.toggle("no-sidebar", id !== "view-app");
   const privacyLine = document.querySelector(".app-privacy-line");
   if(privacyLine) privacyLine.classList.toggle("hidden", !showHeader);
 }
@@ -3879,7 +3920,7 @@ function renderSection(key){
     } else if(st.decision === "include"){
       headRightHTML = `<span class="q-card-badge waiting"><span class="badge-icon">⏳</span>Не&nbsp;заполнено</span>`;
     } else if(st.everOpened){
-      headRightHTML = `<span class="q-card-badge pending">Жду ваш ответ</span>`;
+      headRightHTML = `<span class="q-card-badge pending">Жду решение</span>`;
     } else {
       headRightHTML = `<span class="q-card-badge notopened"><span class="badge-icon badge-dot"></span>Посмотреть</span>`;
     }
@@ -3990,7 +4031,7 @@ function decisionActionsHTML(sectionKey, itemId, answered){
   }
   return `
     <div class="decision-actions">
-      <button class="bot-action-btn" onclick="decide('${sectionKey}','${itemId}','exclude')">Убрать раздел</button>
+      <button class="bot-action-btn" onclick="decide('${sectionKey}','${itemId}','exclude')">Не заполнять раздел</button>
     </div>
   `;
 }
@@ -4086,7 +4127,7 @@ function answerFirst(sectionKey, itemId, val){
 
   const messages = val
     ? asMsgArray(itemDef.recommendYes, "По&nbsp;правилам, этот раздел должен быть в&nbsp;декларации.")
-    : asMsgArray(itemDef.recommendNo, "Супер, вам не&nbsp;нужно заполнять этот раздел в&nbsp;декларации 👌 Нажмите «Убрать раздел», чтобы скрыть его из&nbsp;списка.");
+    : asMsgArray(itemDef.recommendNo, "Супер, этот раздел вам заполнять не&nbsp;нужно 👌 Нажмите «Не&nbsp;заполнять раздел» — он свернется, и&nbsp;в&nbsp;декларацию не&nbsp;попадет.");
   playBotSequence(sectionKey, itemId, messages.slice(), val ? "include" : "exclude", token);
 }
 
@@ -4103,14 +4144,6 @@ function decide(sectionKey, itemId, decision){
   } else {
     st.expanded = false;
   }
-  renderSection(sectionKey);
-  renderSidebar(sectionKey);
-}
-
-function undecide(sectionKey, itemId){
-  const st = state[sectionKey][itemId];
-  st.decision = null;
-  // answered остается true, пользователь снова видит рекомендацию добавить/не&nbsp;добавлять
   renderSection(sectionKey);
   renderSidebar(sectionKey);
 }
@@ -4141,9 +4174,9 @@ function renderFinish(){
     if(sections[key].items.some(it => state[key][it.id].decision === "include")) anyIncluded = true;
     const needsFix = (st === "hasgaps" || st === "inprogress" || st === "notstarted");
     html += `
-      <div class="summary-row">
-        <span>${s.icon} ${s.title} — <strong>${statusLabel[st]}</strong></span>
-        ${needsFix ? `<span class="fix" onclick="navigate('${key}')">исправить →</span>` : ""}
+      <div class="summary-row is-clickable" onclick="navigate('${key}')">
+        <span class="summary-title">${s.icon} ${s.title}</span>
+        <span class="summary-status st-${st}">${statusLabel[st]}</span>
       </div>
     `;
   });
@@ -4298,7 +4331,10 @@ function updateProfile(field, value){
 
 // ---------- автосохранение в браузере ----------
 const STORAGE_KEY = "declaration250_draft_v1";
-const TRANSIENT = ["expanded","thinking","thinkToken","draft","chatVisible"]; // не сохраняем
+// chatLog тоже транзиентный: реплики бота — это сгенерированный текст, а не данные
+// пользователя. Если их сохранять, то после правки формулировок люди со старым
+// черновиком продолжают видеть старые фразы, и текст в продукте расходится с кодом.
+const TRANSIENT = ["expanded","thinking","thinkToken","draft","chatVisible","chatLog"]; // не сохраняем
 
 function collectState(){
   const data = {version:1, reportYear, profile, sections:{}};
@@ -4390,7 +4426,15 @@ function resetAllData(){
   Object.keys(profile).forEach(k=>{ profile[k] = ""; });
   Object.keys(touchedCells).forEach(k=>{ delete touchedCells[k]; });
   Object.keys(touchedProfile).forEach(k=>{ delete touchedProfile[k]; });
-  try{ localStorage.removeItem(STORAGE_KEY); }
+  try{
+    localStorage.removeItem(STORAGE_KEY);
+    // Эти два флага тоже часть состояния: без их сброса «Начать с нуля» оставляет
+    // человека с уже «просмотренным» онбордингом про справку и с выданным
+    // согласием на отправку файла. Для нового чистого прохода это неверно —
+    // особенно согласие: оно должно спрашиваться заново.
+    localStorage.removeItem(UPLOAD_INFO_KEY);
+    localStorage.removeItem(UPLOAD_CONSENT_KEY);
+  }
   catch(e){ /* приватный режим — данных там и не было */ }
 }
 
